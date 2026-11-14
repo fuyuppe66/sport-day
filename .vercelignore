@@ -1,0 +1,9 @@
+*.php
+*.bat
+dev/
+parse_xlsx.php
+stage_random.php
+save_state.php
+upload_avatar.php
+index.php
+reset_postgres.bat

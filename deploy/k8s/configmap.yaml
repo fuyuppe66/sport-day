@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sport-spin-config
+  namespace: sport-spin
+  labels:
+    app.kubernetes.io/name: sport-spin
+data:
+  NODE_ENV: "production"
+  PORT: "8080"
+  HOST: "0.0.0.0"
+  STATE_DIR: "/var/lib/sport-state"
+  TZ: "Asia/Bangkok"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sport-spin
+  namespace: sport-spin
+  labels:
+    app.kubernetes.io/name: sport-spin
+automountServiceAccountToken: false

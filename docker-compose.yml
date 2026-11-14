@@ -1,0 +1,94 @@
+name: sport-spin
+
+services:
+  web:
+    build:
+      context: .
+    image: sport-spin:1.0.0
+    container_name: sport-spin-web
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      HOST: "0.0.0.0"
+      STATE_DIR: /var/lib/sport-state
+      TZ: Asia/Bangkok
+    volumes:
+      - sport-state:/var/lib/sport-state
+    ports:
+      # loopback only for debugging; public traffic goes through Traefik
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - sport-spin
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=sport-spin
+      - traefik.http.routers.sport.rule=Host(`${DOMAIN:-localhost}`)
+      - traefik.http.routers.sport.entrypoints=websecure
+      - traefik.http.routers.sport.tls=true
+      - traefik.http.routers.sport.tls.certresolver=le
+      - traefik.http.services.sport.loadbalancer.server.port=8080
+
+  # Opt-in TLS edge: docker compose --profile edge up -d
+  # Set DOMAIN + ACME_EMAIL in .env (see .env.example) and point DNS at the VPS first.
+  edge:
+    image: traefik:v3.1
+    container_name: sport-spin-edge
+    profiles: ["edge"]
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.network=sport-spin
+      - --providers.docker.exposedbydefault=false
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@example.go.th}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --accesslog=true
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # The Docker provider reads the labels above; this socket mount is
+      # root-equivalent access, keep it read-only and trusted.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    networks:
+      - sport-spin
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  sport-spin:
+
+volumes:
+  sport-state:
+  traefik-letsencrypt:

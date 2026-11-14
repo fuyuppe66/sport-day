@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบสุ่มแบ่งกลุ่ม 4 สี แยกตามลำดับขั้น 5 รอบ - สำนักงานปลัดกระทรวงการคลัง</title>
+  
+  <!-- Fonts -->
+  <link rel="icon" type="image/webp" href="img/Logo4.webp">
+  <link rel="apple-touch-icon" href="img/Logo4.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'Sarabun', 'sans-serif'],
+            heading: ['Prompt', 'sans-serif'],
+            en: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            royal: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#0f2759',
+              950: '#0b1f48',
+            },
+            sky: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-prompt: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-sarabun: 'Sarabun', sans-serif;
+    }
+    body {
+      font-family: var(--font-prompt);
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .bg-clean-canvas {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.7) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.5) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(241, 245, 249, 0.9) 0px, transparent 60%);
+      background-attachment: fixed;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 15px rgba(14, 165, 233, 0.35); }
+      50% { box-shadow: 0 0 25px rgba(29, 78, 216, 0.55); }
+    }
+    .btn-glow {
+      animation: glow-pulse 3s infinite;
+    }
+
+    @keyframes card-pop {
+      0% { transform: scale(0.85); opacity: 0; }
+      70% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: card-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes step-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    .pulse-active {
+      animation: step-pulse 1.8s infinite ease-in-out;
+    }
+
+    @media print {
+      body { background: white !important; }
+      .no-print { display: none !important; }
+      .print-break { page-break-before: always; }
+      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+    }
+  </style>
+
+  <script>
+    // Vercel build: data loaded client-side (replaces the old PHP header injection)
+    window.DATA_LOADED = (async () => {
+      try {
+        let r = await fetch('officials_live.json?t=' + Date.now());
+        const live = r.ok ? await r.json() : null;
+        if (Array.isArray(live) && live.length > 0) window.INITIAL_USER_DATA = live;
+        else {
+          r = await fetch('officials_504.json');
+          if (r.ok) window.INITIAL_USER_DATA = await r.json();
+          else {
+            r = await fetch('performance-appraisal.users19.json');
+            if (r.ok) window.INITIAL_USER_DATA = await r.json();
+          }
+        }
+      } catch (e) {}
+      try {
+        let live = null;
+        const s1 = await fetch('/api/save_state');
+        if (s1.ok) live = await s1.json();
+        if (live && live.teams) window.LATEST_SPIN_DATA = live;
+        else {
+          const s2 = await fetch('latest_spin.json');
+          if (s2.ok) window.LATEST_SPIN_DATA = await s2.json();
+        }
+      } catch (e) {}
+      try {
+        const a = await fetch('/api/upload_avatar?action=list');
+        if (a.ok) { const d = await a.json(); if (d.avatars) window.INITIAL_USER_AVATARS = d.avatars; }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="bg-clean-canvas min-h-screen text-slate-800 flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Masthead: โลโก้เป็นศูนย์กลางการออกแบบ (CI #004B9B จากโลโก้) -->
+  <header class="bg-white no-print shadow-[0_1px_0_rgba(0,75,155,0.10),0_16px_32px_-28px_rgba(0,43,90,0.65)]">
+    <div class="h-[3px] bg-gradient-to-r from-[#002B5A] via-[#004B9B] to-[#0073CF]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] md:items-center gap-y-2 gap-x-4 py-2.5 md:min-h-[84px]">
+
+        <a href="index.html" class="order-1 md:order-2 justify-self-center rounded-lg px-1 py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004B9B]/40">
+          <img src="img/Logo4.webp" alt="กระทรวงการคลัง Ministry of Finance" class="h-9 sm:h-11 md:h-[54px] w-auto object-contain select-none">
+        </a>
+
+        <div class="order-2 md:order-1 justify-self-center md:justify-self-start text-center md:text-left min-w-0">
+          <div class="text-[15px] sm:text-base font-bold text-[#002B5A] font-heading leading-tight tracking-tight">ระบบสุ่มแบ่งกลุ่ม 4 สี</div>
+          <div class="text-[11px] sm:text-[11.5px] text-slate-500 leading-tight mt-0.5">สำนักงานปลัดกระทรวงการคลัง</div>
+        </div>
+
+        <div class="order-3 justify-self-center md:justify-self-end flex items-center gap-1.5 sm:gap-3">
+          <nav class="flex items-center gap-1" aria-label="เมนูหลัก">
+            <a href="index.html" class="px-3 py-1.5 text-[12.5px] font-medium text-slate-500 border-b-2 border-transparent hover:text-[#004B9B] hover:border-[#93C5FD] transition-colors">สุ่มรวม 4 สี</a>
+            <a href="stage_random.html" aria-current="page" class="px-3 py-1.5 text-[12.5px] font-semibold text-[#004B9B] border-b-2 border-[#004B9B] rounded-t-md">สุ่ม 5 ลำดับขั้น</a>
+          </nav>
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-[#F1F6FC] ring-1 ring-[#004B9B]/10 px-2.5 py-1 rounded-full">
+            <i class="fa-solid fa-users text-[10px] text-[#004B9B]/70"></i>
+            ทั้งหมด <strong id="headerTotalCount" class="font-bold text-[#002B5A]">0</strong> คน
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- แถบเครื่องมือของหน้า (ไม่ปักหมุด) -->
+  <div class="bg-white/95 backdrop-blur border-b border-slate-200/90 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-end gap-2">
+
+      <button onclick="openManageModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition active:scale-95 cursor-pointer">
+        <i class="fa-solid fa-users-gear text-royal-600 text-sm"></i>
+        <span>จัดการรายชื่อ</span>
+      </button>
+
+      <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-royal-600 hover:bg-royal-700 rounded-xl transition active:scale-95 cursor-pointer">
+        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+        <span>อัปโหลดไฟล์ใหม่</span>
+      </button>
+
+      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition active:scale-95">
+        <i class="fa-solid fa-print text-slate-500"></i>
+        <span class="hidden sm:inline">พิมพ์รายงาน</span>
+        <span class="sm:hidden sr-only">พิมพ์รายงาน</span>
+      </button>
+
+      <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 rounded-xl transition active:scale-95">
+        <i class="fa-solid fa-file-excel text-emerald-600"></i>
+        <span>ส่งออก Excel</span>
+      </button>
+
+      <button onclick="resetAllStages()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-200/80 rounded-xl transition active:scale-95">
+        <i class="fa-solid fa-rotate-left text-rose-600"></i>
+        <span>เริ่มสุ่มใหม่</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- เนื้อหาหลัก -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+    <!-- 1. แผง Stepper แสดง 5 ลำดับขั้น (Stages Progress) -->
+    <div class="glass-card rounded-2xl p-5 shadow-sm no-print">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+        <div>
+          <h1 class="font-bold text-slate-900 text-base font-heading flex items-center gap-2">
+            <i class="fa-solid fa-stairs text-royal-600"></i>
+            ขั้นตอนการสุ่มตามลำดับตำแหน่ง (5 รอบการสุ่ม)
+          </h1>
+          <p class="text-xs text-slate-500 mt-0.5">
+            สุ่มกระจายคนลงทั้ง 4 สีอย่างสมดุลทีละรอบ เพื่อให้ได้สัดส่วนผู้บริหารและบุคลากรทุกระดับเท่าๆ กันทุกสี
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnAutoAll" onclick="autoRunAllStages()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black rounded-lg shadow-xs transition">
+            <i class="fa-solid fa-forward-fast"></i>
+            <span>สุ่มรวดเดียวครบ 5 รอบ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- สเต็ป 5 กล่อง -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="stepperContainer">
+        <!-- รอบ 1 -->
+        <div id="stepCard-1" class="relative rounded-xl border-2 border-royal-600 bg-royal-50/70 p-3.5 transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-royal-600 text-white">รอบที่ 1</span>
+            <span id="stepStatus-1" class="text-[11px] font-semibold text-royal-700 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-royal-600 animate-ping"></span> พร้อมสุ่ม
+            </span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-xs sm:text-sm">รองปลัด</h3>
+          <p id="stepSub-1" class="text-[11px] text-slate-500 mt-0.5">รองปลัด</p>
+          <div class="mt-2.5 pt-2 border-t border-royal-200/60 flex items-center justify-between text-xs">
+            <span class="text-slate-500">จำนวน:</span>
+            <span id="stepCount-1" class="font-bold text-royal-700">- คน</span>
+          </div>
+        </div>
+
+        <!-- รอบ 2 -->
+        <div id="stepCard-2" class="relative rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all opacity-75">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">รอบที่ 2</span>
+            <span id="stepStatus-2" class="text-[11px] font-semibold text-slate-400">รอรอบ 1</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-xs sm:text-sm">ผู้ตรวจราชการ & ที่ปรึกษา</h3>
+          <p id="stepSub-2" class="text-[11px] text-slate-500 mt-0.5">ผู้ตรวจราชการ & ที่ปรึกษา</p>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-500">จำนวน:</span>
+            <span id="stepCount-2" class="font-bold text-slate-700">- คน</span>
+          </div>
+        </div>
+
+        <!-- รอบ 3 -->
+        <div id="stepCard-3" class="relative rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all opacity-75">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">รอบที่ 3</span>
+            <span id="stepStatus-3" class="text-[11px] font-semibold text-slate-400">รอรอบ 2</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-xs sm:text-sm">ผอ.สำนัก & ผู้เชี่ยวชาญ</h3>
+          <p id="stepSub-3" class="text-[11px] text-slate-500 mt-0.5">ผู้อำนวยการสำนัก/ศูนย์/กอง & ผู้เชี่ยวชาญ</p>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-500">จำนวน:</span>
+            <span id="stepCount-3" class="font-bold text-slate-700">- คน</span>
+          </div>
+        </div>
+
+        <!-- รอบ 4 -->
+        <div id="stepCard-4" class="relative rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all opacity-75">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">รอบที่ 4</span>
+            <span id="stepStatus-4" class="text-[11px] font-semibold text-slate-400">รอรอบ 3</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-xs sm:text-sm">ผอ.ส่วน</h3>
+          <p id="stepSub-4" class="text-[11px] text-slate-500 mt-0.5">ผู้อำนวยการส่วน</p>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-500">จำนวน:</span>
+            <span id="stepCount-4" class="font-bold text-slate-700">- คน</span>
+          </div>
+        </div>
+
+        <!-- รอบ 5 -->
+        <div id="stepCard-5" class="relative rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all opacity-75">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">รอบที่ 5</span>
+            <span id="stepStatus-5" class="text-[11px] font-semibold text-slate-400">รอรอบ 4</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-xs sm:text-sm">คนที่เหลือทั้งหมด</h3>
+          <p id="stepSub-5" class="text-[11px] text-slate-500 mt-0.5">เกลี่ยตามสำนัก/กอง และ ชาย-หญิง</p>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-500">จำนวน:</span>
+            <span id="stepCount-5" class="font-bold text-slate-700">- คน</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ปุ่มกดสุ่มของ Stage ปัจจุบัน (Main Action Hero) -->
+      <div class="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-bullhorn"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">ขั้นตอนต่อไปที่จะสุ่ม:</div>
+            <div id="currentStagePrompt" class="text-sm font-bold text-slate-900">
+              ครั้งที่ 1: สุ่มรองปลัดกระทรวงการคลัง
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <!-- ปุ่มกดสุ่มสเต็ปปัจจุบัน -->
+          <button id="btnSpinStage" onclick="spinCurrentStage()" class="btn-glow flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-royal-600 via-royal-700 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white font-bold text-sm shadow-lg shadow-royal-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
+            <i class="fa-solid fa-dice text-base animate-bounce"></i>
+            <span id="btnSpinText">กดสุ่มรอบที่ 1 ทันที</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. กล่องแสดงไฮไลท์การสุ่มรอบล่าสุด (Latest Reveal Showcase) -->
+    <div id="latestRevealBox" class="hidden glass-card rounded-2xl p-5 shadow-sm border border-amber-200/80 bg-gradient-to-r from-amber-50/60 via-white to-sky-50/60 no-print animate-pop">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-slate-900 text-sm font-heading flex items-center gap-2">
+          <i class="fa-solid fa-sparkles text-amber-500"></i>
+          <span id="latestRevealTitle">ผลการสุ่มรอบล่าสุด</span>
+        </h3>
+        <span id="latestRevealBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+          สุ่มสำเร็จ
+        </span>
+      </div>
+      <div id="latestRevealList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- รายการคนที่เพิ่งสุ่มในรอบนี้จะแสดงที่นี่ -->
+      </div>
+    </div>
+
+    <!-- 3. แผงสถิติรวม 4 สี (Team Balance Snapshot) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <!-- สีแดง -->
+      <div class="bg-white rounded-2xl p-4 border border-rose-200/90 shadow-xs relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100"></span>
+            <span class="font-bold text-rose-700 text-sm">สีแดง</span>
+          </div>
+          <span class="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Red Ruby</span>
+        </div>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="count-0" class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-en">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>ชาย: <strong id="male-0" class="text-slate-800">0</strong></span>
+          <span>หญิง: <strong id="female-0" class="text-slate-800">0</strong></span>
+          <span>ผู้บริหาร: <strong id="vip-0" class="text-amber-600">0</strong></span>
+        </div>
+      </div>
+
+      <!-- สีน้ำเงิน -->
+      <div class="bg-white rounded-2xl p-4 border border-blue-200/90 shadow-xs relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-blue-600 ring-4 ring-blue-100"></span>
+            <span class="font-bold text-blue-700 text-sm">สีน้ำเงิน</span>
+          </div>
+          <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Blue Sapphire</span>
+        </div>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="count-1" class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-en">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>ชาย: <strong id="male-1" class="text-slate-800">0</strong></span>
+          <span>หญิง: <strong id="female-1" class="text-slate-800">0</strong></span>
+          <span>ผู้บริหาร: <strong id="vip-1" class="text-amber-600">0</strong></span>
+        </div>
+      </div>
+
+      <!-- สีเขียว -->
+      <div class="bg-white rounded-2xl p-4 border border-emerald-200/90 shadow-xs relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+            <span class="font-bold text-emerald-700 text-sm">สีเขียว</span>
+          </div>
+          <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Green Emerald</span>
+        </div>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="count-2" class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-en">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>ชาย: <strong id="male-2" class="text-slate-800">0</strong></span>
+          <span>หญิง: <strong id="female-2" class="text-slate-800">0</strong></span>
+          <span>ผู้บริหาร: <strong id="vip-2" class="text-amber-600">0</strong></span>
+        </div>
+      </div>
+
+      <!-- สีเหลือง -->
+      <div class="bg-white rounded-2xl p-4 border border-amber-200/90 shadow-xs relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100"></span>
+            <span class="font-bold text-amber-700 text-sm">สีเหลือง</span>
+          </div>
+          <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Yellow Gold</span>
+        </div>
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="count-3" class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-en">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span>ชาย: <strong id="male-3" class="text-slate-800">0</strong></span>
+          <span>หญิง: <strong id="female-3" class="text-slate-800">0</strong></span>
+          <span>ผู้บริหาร: <strong id="vip-3" class="text-amber-600">0</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ส่วนแสดงผลหลัก (Columns 4 สี / ตารางสรุป) -->
+    <div class="space-y-4">
+      <!-- ตัวสลับมุมมองและช่องค้นหา -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white rounded-2xl p-3 border border-slate-200/90 shadow-xs no-print">
+        <div class="inline-flex p-1 bg-slate-100/90 rounded-xl text-xs font-semibold">
+          <button id="btnViewColumns" onclick="switchView('columns')" class="px-3.5 py-1.5 rounded-lg bg-white text-royal-700 shadow-xs font-bold transition">
+            <i class="fa-solid fa-table-columns mr-1.5"></i> การ์ด 4 สี
+          </button>
+          <button id="btnViewTable" onclick="switchView('table')" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            <i class="fa-solid fa-list mr-1.5"></i> ตารางรายชื่อ
+          </button>
+          <button id="btnViewBreakdown" onclick="switchView('breakdown')" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            <i class="fa-solid fa-chart-pie mr-1.5"></i> สรุปตามรอบ
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1 sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="ค้นหาชื่อ, ตำแหน่ง, สำนัก..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-royal-500 focus:bg-white focus:outline-none transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4.1 มุมมอง Columns 4 สี -->
+      <div id="viewColumns" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Render ผ่าน JavaScript -->
+      </div>
+
+      <!-- 4.2 มุมมอง ตารางรายชื่อ (Table) -->
+      <div id="viewTable" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm text-slate-700">
+            <thead class="bg-slate-50/90 text-slate-600 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="py-3.5 px-4">ลำดับ</th>
+                <th class="py-3.5 px-3 text-center">รูปถ่าย</th>
+                <th class="py-3.5 px-4">รอบที่สุ่ม</th>
+                <th class="py-3.5 px-4">สีที่สังกัด</th>
+                <th class="py-3.5 px-4">ชื่อ - นามสกุล</th>
+                <th class="py-3.5 px-4">เพศ</th>
+                <th class="py-3.5 px-4">ตำแหน่งงาน</th>
+                <th class="py-3.5 px-4">สำนัก / กอง (Division)</th>
+                <th class="py-3.5 px-4">ส่วนงานย่อย (Subdivision)</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100">
+              <!-- Render ผ่าน JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4.3 มุมมอง สรุปตามรอบ (Breakdown per Stage) -->
+      <div id="viewBreakdown" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/90 p-5">
+        <div class="mb-4">
+          <h3 class="font-bold text-slate-900 text-base font-heading flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-royal-600"></i>
+            ตารางตรวจสอบการกระจายตัวของแต่ละรอบ (Stage Breakdown)
+          </h3>
+          <p class="text-xs text-slate-500">
+            แสดงจำนวนคนที่ถูกสุ่มกระจายลงแต่ละสีในทั้ง 5 รอบ
+          </p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs sm:text-sm text-slate-700">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-3 text-left">รอบการสุ่ม (Stage)</th>
+                <th class="py-3 px-3 text-center">จำนวนคนทั้งหมด</th>
+                <th class="py-3 px-3 text-center text-rose-600">สีแดง</th>
+                <th class="py-3 px-3 text-center text-blue-600">สีน้ำเงิน</th>
+                <th class="py-3 px-3 text-center text-emerald-600">สีเขียว</th>
+                <th class="py-3 px-3 text-center text-amber-600">สีเหลือง</th>
+                <th class="py-3 px-3 text-center">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="breakdownBody" class="divide-y divide-slate-100">
+              <!-- Render ผ่าน JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- หน้าต่าง Modal อัปโหลดไฟล์ใหม่ -->
+  <div id="uploadModal" class="fixed inset-0 z-50 bg-[#0b1f48]/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col animate-pop">
+      
+      <!-- ส่วนหัวของ Modal อัปโหลด -->
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-lg shadow-xs">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </span>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 font-heading">นำเข้าไฟล์รายชื่อใหม่สำหรับการสุ่ม 5 รอบ</h3>
+            <p class="text-xs text-slate-500">รองรับไฟล์ Excel (.xlsx, .xls), CSV (.csv) หรือ JSON (.json)</p>
+          </div>
+        </div>
+        <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600 p-2 text-lg cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- กล่อง Drag & Drop -->
+      <div class="p-6">
+        <div id="dropZone" 
+             ondragover="handleDragOver(event)" 
+             ondragleave="handleDragLeave(event)" 
+             ondrop="handleDrop(event)"
+             onclick="document.getElementById('universalFileInput').click()"
+             class="border-2 border-dashed border-sky-300 hover:border-royal-600 bg-sky-50/50 hover:bg-sky-50 rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 group">
+          
+          <input type="file" id="universalFileInput" accept=".xlsx, .xls, .csv, .json" onchange="handleUniversalFileUpload(event)" class="hidden">
+          
+          <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-sky-100 flex items-center justify-center text-sky-600 group-hover:scale-110 group-hover:text-royal-600 transition-all duration-200">
+            <i class="fa-solid fa-file-arrow-up text-3xl"></i>
+          </div>
+
+          <div>
+            <p class="text-sm font-semibold text-slate-800">
+              ลากไฟล์มาวางที่นี่ หรือ <span class="text-royal-600 underline">คลิกเพื่อเลือกไฟล์</span>
+            </p>
+            <p class="text-xs text-slate-500 mt-1">
+              ไฟล์ Excel รายชื่อทางการกระทรวงการคลัง (สป.กค.) หรือไฟล์ข้อมูลบุคลากร
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 mt-2">
+            <span class="px-2.5 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium text-slate-600 flex items-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-file-excel text-emerald-600"></i> .xlsx / .xls
+            </span>
+            <span class="px-2.5 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium text-slate-600 flex items-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-file-code text-amber-600"></i> .json
+            </span>
+            <span class="px-2.5 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium text-slate-600 flex items-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-file-csv text-blue-600"></i> .csv
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ส่วนท้าย Modal -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <span>* เมื่อนำเข้าไฟล์ใหม่ ระบบจะจำแนกบุคคลเข้า 5 ลำดับขั้นให้โดยอัตโนมัติทันที</span>
+        <button onclick="closeUploadModal()" class="px-5 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-medium text-xs transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200/80 bg-white/70 py-4 text-center text-xs text-slate-400 no-print">
+    <div class="max-w-7xl mx-auto px-4">
+      ระบบสุ่มแบ่งกลุ่ม 4 สี แยกตามลำดับขั้น 5 รอบ &bull; สำนักงานปลัดกระทรวงการคลัง (MOF Thailand)
+    </div>
+  </footer>
+
+  <!-- เสียง Audio สังเคราะห์ด้วย Web Audio API -->
+  <script>
+    let audioCtx = null;
+    function playBeep(freq = 440, type = 'sine', duration = 0.08) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playFanfare() {
+      const notes = [261.63, 329.63, 392.00, 523.25];
+      notes.forEach((freq, i) => {
+        setTimeout(() => playBeep(freq, 'triangle', 0.25), i * 120);
+      });
+    }
+
+    // ==========================================
+    // Core Logic: 5 Stages Definition & Management
+    // ==========================================
+    const teamNames = ['สีแดง (Ruby)', 'สีน้ำเงิน (Sapphire)', 'สีเขียว (Emerald)', 'สีเหลือง (Gold)'];
+    const teamTheme = [
+      { name: 'สีแดง', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', badge: 'bg-rose-100 text-rose-800', bar: 'bg-rose-500' },
+      { name: 'สีน้ำเงิน', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-800', bar: 'bg-blue-600' },
+      { name: 'สีเขียว', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-800', bar: 'bg-emerald-500' },
+      { name: 'สีเหลือง', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' },
+    ];
+
+    // ข้อมูล Stage ทั้ง 5
+    const stagesInfo = [
+      {
+        id: 1,
+        title: 'รองปลัด',
+        sub: 'รองปลัดกระทรวงการคลัง',
+        tag: 'รอบที่ 1: รองปลัด',
+        badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
+        icon: 'fa-crown',
+        completed: false
+      },
+      {
+        id: 2,
+        title: 'ผู้ตรวจราชการ & ที่ปรึกษา',
+        sub: 'ผู้ตรวจราชการกระทรวงการคลัง & ที่ปรึกษา',
+        tag: 'รอบที่ 2: ผู้ตรวจ/ที่ปรึกษา',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        icon: 'fa-medal',
+        completed: false
+      },
+      {
+        id: 3,
+        title: 'ผอ.สำนัก & ผู้เชี่ยวชาญ',
+        sub: 'ผู้อำนวยการสำนัก/ศูนย์/กอง & ผู้เชี่ยวชาญ',
+        tag: 'รอบที่ 3: ผอ.สำนัก/ผู้เชี่ยวชาญ',
+        badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+        icon: 'fa-award',
+        completed: false
+      },
+      {
+        id: 4,
+        title: 'ผอ.ส่วน',
+        sub: 'ผู้อำนวยการส่วน',
+        tag: 'รอบที่ 4: ผอ.ส่วน',
+        badgeClass: 'bg-sky-100 text-sky-800 border-sky-200',
+        icon: 'fa-user-tie',
+        completed: false
+      },
+      {
+        id: 5,
+        title: 'คนที่เหลือทั้งหมด',
+        sub: 'เกลี่ยตามสำนัก/กอง และเพศ ชาย-หญิง เท่ากันทุกสี',
+        tag: 'รอบที่ 5: บุคลากรทั่วไป',
+        badgeClass: 'bg-slate-100 text-slate-800 border-slate-200',
+        icon: 'fa-users',
+        completed: false
+      }
+    ];
+
+    let allUsers = [];
+    let stagePools = [[], [], [], [], []]; // Users in stages 1-5
+    let currentTeams = [[], [], [], []];   // Teams 0, 1, 2, 3
+    let currentStageIndex = 0;             // 0 = Stage 1, 1 = Stage 2, ...
+    let rosterKey = '';                    // fingerprint of the roster, invalidates stale saved state
+    let currentView = 'columns';
+    let currentSearch = '';
+
+    // ==========================================
+    // Avatar / Photo Management System
+    // ==========================================
+    let userAvatars = {};
+    let currentAvatarTargetKey = null;
+    let currentAvatarTargetName = '';
+
+    function initAvatarSystem() {
+      if (window.INITIAL_USER_AVATARS && typeof window.INITIAL_USER_AVATARS === 'object') {
+        userAvatars = { ...window.INITIAL_USER_AVATARS };
+      }
+      try {
+        const local = localStorage.getItem('sport_user_avatars');
+        if (local) {
+          const parsed = JSON.parse(local);
+          userAvatars = { ...userAvatars, ...parsed };
+        }
+      } catch (e) {}
+    }
+
+    function getPersonKey(u) {
+      if (u.seq) return 'seq_' + u.seq;
+      if (u.id !== undefined && u.id !== null) return 'id_' + u.id;
+      return 'name_' + encodeURIComponent(u.name || '');
+    }
+
+    function getAvatarUrl(key) {
+      return userAvatars[key] || null;
+    }
+
+    function renderAvatarHtml(u, sizeClass = 'w-11 h-11', iconSizeClass = 'text-base') {
+      const key = getPersonKey(u);
+      const url = getAvatarUrl(key) || (u && u.photo) || null;
+      const isMale = u.gender === 'ชาย';
+      const bgClass = isMale ? 'bg-blue-50 text-blue-500' : 'bg-rose-50 text-rose-500';
+      const iconClass = isMale ? 'fa-user-tie' : 'fa-user';
+      const safeName = (u.name || '').replace(/'/g, "\\'");
+
+      return `
+        <div class="relative shrink-0 cursor-pointer group/avatar select-none" onclick="event.stopPropagation(); triggerAvatarUpload('${key}', '${safeName}')" title="คลิกที่นี่เพื่ออัปโหลด/เปลี่ยนรูปถ่ายของ ${u.name}">
+          <div class="${sizeClass} rounded-xl ring-2 ring-slate-100 group-hover/avatar:ring-royal-500 overflow-hidden ${bgClass} flex items-center justify-center transition duration-200 shadow-xs relative bg-white">
+            <img id="avatar-img-${key}" src="${url || ''}" class="w-full h-full object-cover ${url ? '' : 'hidden'}" alt="${u.name}" onerror="this.classList.add('hidden'); const fb=document.getElementById('avatar-fallback-${key}'); if(fb) fb.classList.remove('hidden');">
+            <div id="avatar-fallback-${key}" class="w-full h-full flex items-center justify-center ${url ? 'hidden' : ''}">
+              <i class="fa-solid ${iconClass} ${iconSizeClass}"></i>
+            </div>
+            <!-- Hover Overlay -->
+            <div class="absolute inset-0 bg-black/45 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-bold backdrop-blur-[0.5px]">
+              <i class="fa-solid fa-camera text-[11px] mb-0.5"></i>
+              <span>${url ? 'เปลี่ยน' : 'เพิ่มรูป'}</span>
+            </div>
+          </div>
+          <!-- Mini Camera Badge -->
+          <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white ring-1 ring-slate-200 text-royal-600 flex items-center justify-center text-[7px] shadow-xs group-hover/avatar:scale-110 transition">
+            <i class="fa-solid ${url ? 'fa-pen' : 'fa-camera'}"></i>
+          </span>
+        </div>
+      `;
+    }
+
+    function triggerAvatarUpload(key, name) {
+      currentAvatarTargetKey = key;
+      currentAvatarTargetName = name;
+      const input = document.getElementById('globalAvatarInput');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    }
+
+    function handleAvatarFileSelected(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !currentAvatarTargetKey) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP) เท่านั้นครับ');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        const key = currentAvatarTargetKey;
+        userAvatars[key] = dataUrl;
+
+        try {
+          localStorage.setItem('sport_user_avatars', JSON.stringify(userAvatars));
+        } catch (e) {}
+
+        updateAvatarInDOM(key, dataUrl);
+        showAvatarToast(`อัปโหลดรูปถ่ายของ ${currentAvatarTargetName} เรียบร้อยแล้ว!`);
+
+        fetch('/api/upload_avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: key, imageBase64: dataUrl })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.avatarUrl) {
+            userAvatars[key] = data.avatarUrl;
+            try {
+              localStorage.setItem('sport_user_avatars', JSON.stringify(userAvatars));
+            } catch (e) {}
+          }
+        })
+        .catch(err => console.warn('Server upload error:', err));
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateAvatarInDOM(key, url) {
+      document.querySelectorAll(`[id^="avatar-img-${key}"]`).forEach(img => {
+        img.src = url;
+        img.classList.remove('hidden');
+      });
+      document.querySelectorAll(`[id^="avatar-fallback-${key}"]`).forEach(fb => {
+        fb.classList.add('hidden');
+      });
+    }
+
+    function showAvatarToast(msg) {
+      const toast = document.getElementById('avatarToast');
+      const text = document.getElementById('avatarToastText');
+      if (!toast || !text) return;
+      text.innerText = msg;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      toast.style.pointerEvents = 'auto';
+      clearTimeout(window._avatarToastTimer);
+      window._avatarToastTimer = setTimeout(() => {
+        toast.style.transform = 'translateY(80px)';
+        toast.style.opacity = '0';
+        toast.style.pointerEvents = 'none';
+      }, 3000);
+    }
+
+    // ==========================================
+    // State Synchronization (with index.php)
+    // ==========================================
+    function saveSyncState() {
+      const payload = {
+        timestamp: Date.now(),
+        rosterKey: rosterKey,
+        currentStageIndex: currentStageIndex,
+        teams: currentTeams.map(team => team.map(u => ({
+          ...u,
+          raw: u.raw || u
+        }))),
+        stagesCompleted: stagesInfo.map(s => s.completed),
+        source: 'stage_random'
+      };
+
+      try {
+        localStorage.setItem('sport_shared_stage_state', JSON.stringify(payload));
+      } catch (e) {}
+
+      try {
+        fetch('/api/save_state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    function restoreSavedState() {
+      let state = null;
+      try {
+        const raw = localStorage.getItem('sport_shared_stage_state');
+        if (raw) state = JSON.parse(raw);
+      } catch (e) {}
+
+      if (!state && window.LATEST_SPIN_DATA && window.LATEST_SPIN_DATA.teams) {
+        state = window.LATEST_SPIN_DATA;
+      }
+
+      // ข้อมูลชุดใหม่ (เช่น ดึงรายชื่อจาก API มาเพิ่ม) -> ทิ้ง state เก่า ไม่ให้คนใหม่หาย
+      if (state && state.rosterKey !== rosterKey) {
+        console.log('[stage] saved state belongs to an older roster, ignoring it');
+        return false;
+      }
+
+      if (state && Array.isArray(state.teams) && state.teams.length === 4) {
+        const hasPeople = state.teams.some(t => t.length > 0);
+        if (hasPeople) {
+          // คนที่ถูกเอาออกจากรายชื่อ (ไม่ติ๊ก) ต้องไม่โผล่ในผลสุ่มที่ค้างอยู่ใน localStorage
+          const activeKeys = new Set(allUsers.filter(u => u.active !== false).map(u => getPersonKey(u)));
+          currentTeams = state.teams.map(t => (Array.isArray(t) ? t.filter(u => activeKeys.has(getPersonKey(u))) : []));
+          currentStageIndex = typeof state.currentStageIndex === 'number' ? state.currentStageIndex : 5;
+          if (Array.isArray(state.stagesCompleted)) {
+            state.stagesCompleted.forEach((comp, idx) => {
+              if (stagesInfo[idx]) stagesInfo[idx].completed = comp;
+            });
+          } else {
+            for (let i = 0; i < currentStageIndex; i++) {
+              if (stagesInfo[i]) stagesInfo[i].completed = true;
+            }
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // hash แบบสั้น ไม่ต้องแม่นยำ แค่ใช้เทียบว่าข้อมูลเปลี่ยนหรือไม่
+    function simpleHash(str) {
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+      return Math.abs(h).toString(36);
+    }
+
+    // อัปเดตคำอธิบาย/ตัวเลขของทุกรอบจากข้อมูลจริง (ไม่มีตัวเลขฝังในโค้ด)
+    function updateStageDescriptions() {
+      const n = stagePools.map(p => p.length);
+      const countIn = (i, re) => stagePools[i].filter(u => re.test(u.position || '')).length;
+
+      const deputy = countIn(0, /รองปลัด/u);
+      const inspector = countIn(1, /ผู้ตรวจราชการ/u);
+      const director = countIn(2, /ผู้อำนวยการ/u);
+
+      const texts = [
+        `รองปลัด (${deputy})`,
+        `ผู้ตรวจราชการ (${inspector}) & ที่ปรึกษา (${n[1] - inspector})`,
+        `ผู้อำนวยการสำนัก/ศูนย์/กอง (${director}) & ผู้เชี่ยวชาญ (${n[2] - director})`,
+        `ผู้อำนวยการส่วน (${n[3]} ท่าน)`,
+        `เกลี่ยตามสำนัก/กอง และชาย-หญิง (${n[4]} ท่าน)`
+      ];
+
+      texts.forEach((txt, i) => {
+        const sub = document.getElementById(`stepSub-${i + 1}`);
+        if (sub) sub.innerText = txt;
+        if (stagesInfo[i]) stagesInfo[i].sub = txt;
+        const cnt = document.getElementById(`stepCount-${i + 1}`);
+        if (cnt) cnt.innerText = `${n[i]} คน`;
+      });
+    }
+
+    // จำแนกบุคคลลงใน 5 Stages
+    function classifyUsersIntoStages(rawList) {
+      stagePools = [[], [], [], [], []];
+
+      rawList.forEach((u, idx) => {
+        if (u.active === false) return;
+        const pos = (u.POSITION || u.position || '').trim();
+        // "รักษาการในตำแหน่ง ..." ยังไม่ใช่ตำแหน่งนั้นจริง ๆ -> จัดรอบด้วยตำแหน่งจริง
+        const matchPos = (pos.replace(/\s*รักษาการ.*$/u, '') || pos).trim();
+        const name = (u.name || '').trim();
+        const div = (u.division || '').trim();
+        const sub = (u.subdiv1 || '').trim();
+        const gender = u.gender || (name.startsWith('นาย') ? 'ชาย' : 'หญิง');
+
+        const item = {
+          ...u,
+          id: idx,
+          name: name,
+          position: pos,
+          division: div,
+          subdiv: sub,
+          gender: gender,
+          active: u.active !== false,
+          assignedTeam: -1,
+          assignedStage: -1
+        };
+
+        // Stage 1: รองปลัด เท่านั้น (4 ท่าน)
+        if (/รองปลัด/u.test(matchPos) && !/หัวหน้าผู้ตรวจ/u.test(matchPos)) {
+          item.stageId = 1;
+          stagePools[0].push(item);
+        }
+        // Stage 2: ผู้ตรวจราชการ และ ที่ปรึกษา เท่านั้น (5 ท่าน - ไม่รวม อธิบดี, ปลัด, หรือหน้าห้อง)
+        else if (/(ผู้ตรวจราชการ|ที่ปรึกษา)/u.test(matchPos) && 
+                 !/(อธิบดี|ปลัด|เจ้าพนักงาน|พนักงาน|นักวิชาการ|นิติกร|เศรษฐกร|หน้าห้อง)/u.test(matchPos)) {
+          item.stageId = 2;
+          stagePools[1].push(item);
+        }
+        // Stage 3: ผอ.สำนัก, ผอ.ศูนย์, ผอ.กอง, ผู้เชี่ยวชาญ / เชี่ยวชาญ
+        else if (/(ผู้อำนวยการสำนัก|ผู้อำนวยการศูนย์|ผู้อำนวยการกอง|ผู้อำนวยการสำนักงาน|ผู้อำนวยการกลุ่ม|ผอ\.สำนัก|ผอ\.กลุ่ม|เชี่ยวชาญ)/u.test(matchPos)) {
+          item.stageId = 3;
+          stagePools[2].push(item);
+        }
+        // Stage 4: ผอ.ส่วน
+        else if (/(ผู้อำนวยการส่วน|ผอ\.ส่วน)/u.test(matchPos)) {
+          item.stageId = 4;
+          stagePools[3].push(item);
+        }
+        // Stage 5: บุคลากรที่เหลือทั้งหมด
+        else {
+          item.stageId = 5;
+          stagePools[4].push(item);
+        }
+      });
+
+      // อัปเดตตัวเลขแสดงใน Stepper
+      for (let i = 0; i < 5; i++) {
+        const el = document.getElementById(`stepCount-${i + 1}`);
+        if (el) el.innerText = `${stagePools[i].length} คน`;
+      }
+
+      // ลายนิ้วมือของชุดข้อมูล: ใช้ตัด saved state ที่มาจากข้อมูลชุดเก่า
+      rosterKey = 'v3-' + rawList.length + '-' + simpleHash(rawList.map(u => u.id || u.seq || u.name).join('|'));
+
+      // คำอธิบายในแต่ละรอบต้องตรงกับข้อมูลจริง (ไม่ใช่ตัวเลขตายตัว)
+      updateStageDescriptions();
+    }
+
+    // ฟังก์ชัน Fisher-Yates Shuffle
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // ==========================================
+    // การสุ่มทีละ Stage (Stage Randomization)
+    // ==========================================
+    function spinCurrentStage() {
+      if (currentStageIndex >= 5) {
+        alert('สุ่มครบทั้ง 5 รอบเรียบร้อยแล้วครับ! หากต้องการสุ่มใหม่สามารถกดปุ่ม "เริ่มสุ่มใหม่" ได้เลยครับ');
+        return;
+      }
+
+      const stageNum = currentStageIndex + 1;
+      const pool = [...stagePools[currentStageIndex]];
+      if (pool.length === 0) {
+        advanceToNextStage();
+        return;
+      }
+
+      playBeep(587.33, 'triangle', 0.15);
+
+      // สุ่มคนใน Pool
+      shuffleArray(pool);
+
+      // ถ้าเป็น Stage 1-4 (ผู้บริหาร/ผอ.): เกลี่ยลงทั้ง 4 สีให้เท่าๆ กัน
+      // โดยวนเรียงตามลำดับสีที่มีจำนวนคนน้อยที่สุด
+      const assignedThisRound = [];
+
+      if (stageNum <= 4) {
+        // จัดลำดับแบบ Round Robin สลับสีที่มีคนน้อยสุด
+        pool.forEach(person => {
+          // หาสีที่มีคนใน Stage นี้ หรือยอดรวมน้อยที่สุด
+          let minTeam = 0;
+          let minCount = Infinity;
+          for (let t = 0; t < 4; t++) {
+            const countInStage = currentTeams[t].filter(u => u.assignedStage === stageNum).length;
+            const totalInTeam = currentTeams[t].length;
+            const score = countInStage * 1000 + totalInTeam;
+            if (score < minCount) {
+              minCount = score;
+              minTeam = t;
+            }
+          }
+
+          person.assignedTeam = minTeam;
+          person.assignedStage = stageNum;
+          currentTeams[minTeam].push(person);
+          assignedThisRound.push({ person, team: minTeam });
+        });
+      } else {
+        // Stage 5: คนที่เหลือทั้งหมด (เกลี่ยตามสำนัก/กอง และ ชาย-หญิง)
+        // จัดกลุ่มตามสำนัก/กอง (Division) และ เพศ
+        const divGroups = {};
+        pool.forEach(p => {
+          const div = p.division || 'ส่วนกลาง';
+          if (!divGroups[div]) divGroups[div] = { male: [], female: [], other: [] };
+          if (p.gender === 'ชาย') divGroups[div].male.push(p);
+          else if (p.gender === 'หญิง') divGroups[div].female.push(p);
+          else divGroups[div].other.push(p);
+        });
+
+        // วนจัดคนลงสี
+        Object.keys(divGroups).forEach(divKey => {
+          const g = divGroups[divKey];
+          shuffleArray(g.male);
+          shuffleArray(g.female);
+          shuffleArray(g.other);
+
+          const allDivPeople = [...g.male, ...g.female, ...g.other];
+          allDivPeople.forEach(person => {
+            // เลือกสีที่ 1. มีคนจาก Division นี้น้อยสุด 2. สัดส่วนเพศสมดุล 3. ยอดรวมน้อยสุด
+            let bestTeam = 0;
+            let bestScore = Infinity;
+
+            for (let t = 0; t < 4; t++) {
+              const divCount = currentTeams[t].filter(u => u.division === person.division).length;
+              const genderCount = currentTeams[t].filter(u => u.gender === person.gender).length;
+              const totalCount = currentTeams[t].length;
+
+              // ถ่วงน้ำหนักคะแนน
+              const score = (divCount * 100) + (genderCount * 5) + totalCount;
+              if (score < bestScore) {
+                bestScore = score;
+                bestTeam = t;
+              }
+            }
+
+            person.assignedTeam = bestTeam;
+            person.assignedStage = stageNum;
+            currentTeams[bestTeam].push(person);
+            assignedThisRound.push({ person, team: bestTeam });
+          });
+        });
+      }
+
+      // ทำเอฟเฟกต์ Confetti
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+      playFanfare();
+
+      // บันทึกสถานะว่า Stage นี้เสร็จแล้ว
+      stagesInfo[currentStageIndex].completed = true;
+
+      // แสดงกล่องไฮไลท์ผลการสุ่มรอบนี้
+      showLatestReveal(stageNum, assignedThisRound);
+
+      // เลื่อนไป Stage ถัดไป และบันทึกสถานะซิงค์
+      currentStageIndex++;
+      saveSyncState();
+      updateStepperUI();
+      renderAllViews();
+    }
+
+    // แสดงการ์ดไฮไลท์คนที่เพิ่งได้สุ่มในรอบนี้
+    function showLatestReveal(stageNum, assignedList) {
+      const box = document.getElementById('latestRevealBox');
+      const title = document.getElementById('latestRevealTitle');
+      const badge = document.getElementById('latestRevealBadge');
+      const list = document.getElementById('latestRevealList');
+
+      box.classList.remove('hidden');
+      title.innerText = `ผลการสุ่มรอบที่ ${stageNum}: ${stagesInfo[stageNum - 1].title} (${assignedList.length} ท่าน)`;
+      badge.innerText = `รอบที่ ${stageNum} สำเร็จแล้ว`;
+
+      // แสดงการ์ดไฮไลท์ (ถ้ามากกว่า 16 คน เช่นรอบ 5 ให้แสดงสรุปตัวอย่าง)
+      const displayItems = assignedList.slice(0, 16);
+      list.innerHTML = displayItems.map(({ person, team }) => {
+        const theme = teamTheme[team];
+        return `
+          <div data-pid="${person.id}" class="bg-white rounded-xl p-3 border ${theme.border} shadow-xs flex items-center gap-3 animate-pop">
+            ${renderAvatarHtml(person, 'w-11 h-11', 'text-base')}
+            <div class="overflow-hidden flex-1">
+              <div class="font-bold text-slate-900 text-xs truncate" title="${person.name}">${person.name}</div>
+              <div class="text-[11px] text-slate-500 truncate" title="${person.position}">${person.position}</div>
+              <div class="text-[10px] ${theme.text} font-semibold mt-0.5">สังกัด: ${theme.name}</div>
+            </div>
+            <div class="w-7 h-7 rounded-full ${theme.bg} ${theme.text} flex items-center justify-center font-bold text-xs ring-2 ring-white shadow-xs shrink-0">
+              ${teamNames[team].split(' ')[0].replace('สี', '')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (assignedList.length > 16) {
+        list.innerHTML += `
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-center text-xs text-slate-500 font-semibold col-span-full">
+            และบุคลากรอีก ${assignedList.length - 16} คน ถูกกระจายครบทุกสีอย่างสมดุลเรียบร้อยแล้ว
+          </div>
+        `;
+      }
+    }
+
+    // อัปเดต UI ของ Stepper 5 ขั้นตอน
+    function updateStepperUI() {
+      for (let i = 0; i < 5; i++) {
+        const card = document.getElementById(`stepCard-${i + 1}`);
+        const status = document.getElementById(`stepStatus-${i + 1}`);
+
+        if (i < currentStageIndex) {
+          // สำเร็จแล้ว
+          card.className = "relative rounded-xl border border-emerald-300 bg-emerald-50/80 p-3.5 transition-all shadow-xs";
+          status.className = "text-[11px] font-bold text-emerald-700 flex items-center gap-1";
+          status.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-600"></i> สุ่มแล้ว`;
+        } else if (i === currentStageIndex) {
+          // กำลังเป็นคิวปัจจุบัน
+          card.className = "relative rounded-xl border-2 border-royal-600 bg-royal-50/80 p-3.5 transition-all shadow-sm pulse-active";
+          status.className = "text-[11px] font-bold text-royal-700 flex items-center gap-1";
+          status.innerHTML = `<span class="w-2 h-2 rounded-full bg-royal-600 animate-ping"></span> พร้อมสุ่ม`;
+        } else {
+          // ยังไม่ถึงคิว
+          card.className = "relative rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all opacity-70";
+          status.className = "text-[11px] font-semibold text-slate-400";
+          status.innerText = `รอรอบที่ ${i}`;
+        }
+      }
+
+      // อัปเดตข้อความบนปุ่มสุ่ม
+      const btnSpin = document.getElementById('btnSpinStage');
+      const btnSpinText = document.getElementById('btnSpinText');
+      const promptEl = document.getElementById('currentStagePrompt');
+
+      if (currentStageIndex < 5) {
+        const nextStage = stagesInfo[currentStageIndex];
+        const count = stagePools[currentStageIndex].length;
+        btnSpin.disabled = false;
+        btnSpin.className = "btn-glow flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-royal-600 via-royal-700 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white font-bold text-sm shadow-lg shadow-royal-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer";
+        btnSpinText.innerText = `กดสุ่มรอบที่ ${currentStageIndex + 1}: ${nextStage.title}`;
+        promptEl.innerText = `ครั้งที่ ${currentStageIndex + 1}: สุ่ม${nextStage.title} (${count} ท่าน)`;
+      } else {
+        btnSpin.disabled = true;
+        btnSpin.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-md transition cursor-not-allowed";
+        btnSpinText.innerHTML = `<i class="fa-solid fa-circle-check"></i> สุ่มครบทั้ง 5 รอบเรียบร้อยแล้ว`;
+        promptEl.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-check-double mr-1"></i> การสุ่มเสร็จสิ้นสมบูรณ์ครบทั้ง ${allUsers.length} คนแล้ว</span>`;
+      }
+    }
+
+    // สุ่มทั้งหมดรวดเดียวครบ 5 รอบ
+    function autoRunAllStages() {
+      if (currentStageIndex >= 5) {
+        if (!confirm('สุ่มครบ 5 รอบแล้ว ต้องการเริ่มสุ่มใหม่ตั้งแต่รอบที่ 1 หรือไม่?')) return;
+        resetAllStages();
+      }
+
+      let interval = setInterval(() => {
+        if (currentStageIndex < 5) {
+          spinCurrentStage();
+        } else {
+          clearInterval(interval);
+        }
+      }, 700);
+    }
+
+    // รีเซ็ตการสุ่มใหม่ทั้งหมด
+    function resetAllStages() {
+      currentStageIndex = 0;
+      currentTeams = [[], [], [], []];
+      stagesInfo.forEach(s => s.completed = false);
+      classifyUsersIntoStages(allUsers.filter(u => u.active !== false));
+      document.getElementById('latestRevealBox').classList.add('hidden');
+      saveSyncState();
+      updateStepperUI();
+      renderAllViews();
+    }
+
+    // ==========================================
+    // Render Views (Columns, Table, Breakdown)
+    // ==========================================
+    function renderAllViews() {
+      updateCounters();
+      renderColumnsView();
+      renderTableView();
+      renderBreakdownView();
+    }
+
+    function updateCounters() {
+      for (let t = 0; t < 4; t++) {
+        const team = currentTeams[t];
+        const total = team.length;
+        const male = team.filter(u => u.gender === 'ชาย').length;
+        const female = team.filter(u => u.gender === 'หญิง').length;
+        const vip = team.filter(u => u.assignedStage <= 3).length; // ผู้บริหารรอบ 1-3
+
+        document.getElementById(`count-${t}`).innerText = total;
+        document.getElementById(`male-${t}`).innerText = male;
+        document.getElementById(`female-${t}`).innerText = female;
+        document.getElementById(`vip-${t}`).innerText = vip;
+      }
+    }
+
+    // 1. มุมมอง Columns 4 สี
+    function renderColumnsView() {
+      const container = document.getElementById('viewColumns');
+      container.innerHTML = '';
+
+      for (let t = 0; t < 4; t++) {
+        const theme = teamTheme[t];
+        let teamList = [...currentTeams[t]];
+
+        // กรองตามการค้นหา
+        if (currentSearch) {
+          const q = currentSearch.toLowerCase();
+          teamList = teamList.filter(u => 
+            u.name.toLowerCase().includes(q) ||
+            u.position.toLowerCase().includes(q) ||
+            u.division.toLowerCase().includes(q) ||
+            u.subdiv.toLowerCase().includes(q)
+          );
+        }
+
+        // จัดเรียงตาม Stage 1 -> 5
+        teamList.sort((a, b) => a.assignedStage - b.assignedStage);
+
+        const col = document.createElement('div');
+        col.className = `bg-white rounded-2xl border ${theme.border} shadow-sm overflow-hidden flex flex-col`;
+
+        col.innerHTML = `
+          <!-- Header ประจำสี -->
+          <div class="${theme.bg} p-4 border-b ${theme.border}">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full ${theme.bar} ring-4 ring-white"></span>
+                <h3 class="font-bold text-slate-900 text-base font-heading">${teamTheme[t].name}</h3>
+              </div>
+              <span class="text-xs font-bold ${theme.badge} px-2.5 py-1 rounded-full shadow-xs">
+                ${teamList.length} คน
+              </span>
+            </div>
+          </div>
+
+          <!-- รายชื่อบุคคลในการ์ด -->
+          <div class="p-3 space-y-2.5 overflow-y-auto max-h-[620px] custom-scroll flex-1">
+            ${teamList.length === 0 ? `
+              <div class="text-center py-12 text-slate-400 text-xs">
+                <i class="fa-solid fa-user-clock text-2xl text-slate-300 mb-2 block"></i>
+                ยังไม่มีรายชื่อในสีนี้<br>กดปุ่ม "สุ่มรอบที่ ${currentStageIndex + 1}" เพื่อเริ่มสุ่ม
+              </div>
+            ` : teamList.map((u, i) => {
+              const stageData = stagesInfo[(u.assignedStage || 1) - 1];
+              return `
+                <div data-pid="${u.id}" class="p-3 rounded-xl border border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50/80 transition shadow-xs group flex items-start gap-3">
+                  <!-- Avatar Frame with Upload -->
+                  ${renderAvatarHtml(u, 'w-12 h-12', 'text-lg')}
+
+                  <!-- Person Details -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${stageData.badgeClass}">
+                        <i class="fa-solid ${stageData.icon} text-[9px] mr-1"></i> ${stageData.tag.split(':')[0]}
+                      </span>
+                      <span class="text-[10px] font-medium px-1.5 py-0.5 rounded ${u.gender === 'ชาย' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">
+                        ${u.gender}
+                      </span>
+                    </div>
+
+                    <div class="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-royal-600 transition truncate" title="${u.name}">
+                      ${u.name}
+                    </div>
+
+                    <div class="text-[11px] text-slate-600 truncate mt-0.5" title="${u.position}">
+                      <i class="fa-solid fa-briefcase text-slate-400 text-[10px] mr-1"></i> ${u.position || '-'}
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 truncate mt-1 pt-1 border-t border-slate-100" title="${u.division} / ${u.subdiv}">
+                      <i class="fa-solid fa-building text-slate-300 mr-1"></i> ${u.division}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        container.appendChild(col);
+      }
+    }
+
+    // 2. มุมมอง Table
+    function renderTableView() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      let allAssigned = [];
+      for (let t = 0; t < 4; t++) {
+        currentTeams[t].forEach(u => allAssigned.push(u));
+      }
+
+      if (currentSearch) {
+        const q = currentSearch.toLowerCase();
+        allAssigned = allAssigned.filter(u => 
+          u.name.toLowerCase().includes(q) ||
+          u.position.toLowerCase().includes(q) ||
+          u.division.toLowerCase().includes(q) ||
+          u.subdiv.toLowerCase().includes(q)
+        );
+      }
+
+      // เรียงตาม Stage แล้วตามชื่อ
+      allAssigned.sort((a, b) => a.assignedStage - b.assignedStage || a.assignedTeam - b.assignedTeam);
+
+      if (allAssigned.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400">ยังไม่มีรายชื่อที่ถูกสุ่ม หรือไม่พบข้อมูลตรงกับคำค้นหา</td></tr>`;
+        return;
+      }
+
+      allAssigned.forEach((u, idx) => {
+        const theme = teamTheme[u.assignedTeam];
+        const stageData = stagesInfo[(u.assignedStage || 1) - 1];
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.dataset.pid = u.id;
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-slate-400 font-en text-xs">${idx + 1}</td>
+          <td class="py-3 px-3 text-center">
+            ${renderAvatarHtml(u, 'w-9 h-9', 'text-xs')}
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border ${stageData.badgeClass}">
+              <i class="fa-solid ${stageData.icon} text-[9px]"></i> รอบที่ ${u.assignedStage}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-bold">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${theme.badge}">
+              <span class="w-2 h-2 rounded-full ${theme.bar}"></span>
+              ${theme.name}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-semibold text-slate-900">${u.name}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-xs font-medium ${u.gender === 'ชาย' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">
+              ${u.gender}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-600 text-xs max-w-xs truncate" title="${u.position}">${u.position || '-'}</td>
+          <td class="py-3 px-4 text-slate-700 text-xs">${u.division}</td>
+          <td class="py-3 px-4 text-slate-500 text-xs">${u.subdiv || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 3. มุมมอง Breakdown per Stage
+    function renderBreakdownView() {
+      const tbody = document.getElementById('breakdownBody');
+      tbody.innerHTML = '';
+
+      for (let s = 1; s <= 5; s++) {
+        const stage = stagesInfo[s - 1];
+        const totalInPool = stagePools[s - 1].length;
+
+        // นับจำนวนคนแต่ละสีในรอบนี้
+        const c0 = currentTeams[0].filter(u => u.assignedStage === s).length;
+        const c1 = currentTeams[1].filter(u => u.assignedStage === s).length;
+        const c2 = currentTeams[2].filter(u => u.assignedStage === s).length;
+        const c3 = currentTeams[3].filter(u => u.assignedStage === s).length;
+        const assignedTotal = c0 + c1 + c2 + c3;
+
+        const isDone = assignedTotal === totalInPool && totalInPool > 0;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="py-3.5 px-3">
+            <div class="font-bold text-slate-900 text-xs sm:text-sm">
+              รอบที่ ${s}: ${stage.title}
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">${stage.sub}</div>
+          </td>
+          <td class="py-3.5 px-3 text-center font-bold text-slate-900">${totalInPool} คน</td>
+          <td class="py-3.5 px-3 text-center font-bold text-rose-600 font-en">${c0}</td>
+          <td class="py-3.5 px-3 text-center font-bold text-blue-600 font-en">${c1}</td>
+          <td class="py-3.5 px-3 text-center font-bold text-emerald-600 font-en">${c2}</td>
+          <td class="py-3.5 px-3 text-center font-bold text-amber-600 font-en">${c3}</td>
+          <td class="py-3.5 px-3 text-center">
+            ${isDone ? `
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <i class="fa-solid fa-check text-emerald-600"></i> สุ่มครบแล้ว
+              </span>
+            ` : s === currentStageIndex + 1 ? `
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-royal-700 bg-royal-50 border border-royal-200 px-2.5 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-royal-600 animate-ping"></span> คิวต่อไป
+              </span>
+            ` : `
+              <span class="text-[11px] font-medium text-slate-400">ยังไม่ได้สุ่ม</span>
+            `}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // สลับมุมมอง View
+    function switchView(viewName) {
+      currentView = viewName;
+      document.getElementById('viewColumns').classList.toggle('hidden', viewName !== 'columns');
+      document.getElementById('viewTable').classList.toggle('hidden', viewName !== 'table');
+      document.getElementById('viewBreakdown').classList.toggle('hidden', viewName !== 'breakdown');
+
+      // ปรับ Style ปุ่ม
+      const bCols = document.getElementById('btnViewColumns');
+      const bTable = document.getElementById('btnViewTable');
+      const bBreak = document.getElementById('btnViewBreakdown');
+
+      [bCols, bTable, bBreak].forEach(b => {
+        b.className = "px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition";
+      });
+
+      if (viewName === 'columns') bCols.className = "px-3.5 py-1.5 rounded-lg bg-white text-royal-700 shadow-xs font-bold transition";
+      else if (viewName === 'table') bTable.className = "px-3.5 py-1.5 rounded-lg bg-white text-royal-700 shadow-xs font-bold transition";
+      else if (viewName === 'breakdown') bBreak.className = "px-3.5 py-1.5 rounded-lg bg-white text-royal-700 shadow-xs font-bold transition";
+    }
+
+    function handleSearch(val) {
+      currentSearch = val.trim();
+      renderColumnsView();
+      renderTableView();
+    }
+
+    // ส่งออก Excel
+    function exportToExcel() {
+      let exportRows = [];
+      for (let t = 0; t < 4; t++) {
+        currentTeams[t].forEach((u, idx) => {
+          exportRows.push({
+            'ลำดับ': exportRows.length + 1,
+            'รอบที่สุ่ม': `รอบที่ ${u.assignedStage} (${stagesInfo[u.assignedStage - 1].title})`,
+            'สีที่สังกัด': teamNames[t],
+            'ชื่อ-นามสกุล': u.name,
+            'เพศ': u.gender,
+            'ตำแหน่ง': u.position,
+            'สำนัก/กอง (Division)': u.division,
+            'ส่วนงานย่อย (Subdivision)': u.subdiv
+          });
+        });
+      }
+
+      if (exportRows.length === 0) {
+        alert('ยังไม่มีรายชื่อที่ถูกสุ่มครับ กรุณากดสุ่มอย่างน้อย 1 รอบก่อนส่งออกไฟล์');
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "ผลการสุ่ม 5 รอบ");
+      XLSX.writeFile(wb, `ผลการสุ่มแบ่งกลุ่ม4สี_5รอบ_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    // ==========================================
+    // ระบบอัปโหลดไฟล์ใหม่ (Excel, CSV, JSON)
+    // ==========================================
+    function openUploadModal() {
+      document.getElementById('uploadModal').classList.remove('hidden');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').classList.add('hidden');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropZone').classList.add('border-royal-600', 'bg-sky-100/60');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropZone').classList.remove('border-royal-600', 'bg-sky-100/60');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('dropZone').classList.remove('border-royal-600', 'bg-sky-100/60');
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        processUploadedFile(dt.files[0]);
+      }
+    }
+
+    function handleUniversalFileUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        processUploadedFile(file);
+      }
+    }
+
+    function processUploadedFile(file) {
+      const fileName = file.name.toLowerCase();
+      const reader = new FileReader();
+
+      // 1. กรณีเป็นไฟล์ JSON
+      if (fileName.endsWith('.json')) {
+        reader.onload = function(evt) {
+          try {
+            const json = JSON.parse(evt.target.result);
+            if (!Array.isArray(json)) {
+              alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง: ข้อมูลต้องเป็น Array ของรายชื่อ');
+              return;
+            }
+            allUsers = json;
+            document.getElementById('headerTotalCount').innerText = allUsers.length;
+            resetAllStages();
+            closeUploadModal();
+            alert(`นำเข้าไฟล์ "${file.name}" สำเร็จเรียบร้อย! พบข้อมูลทั้งหมด ${json.length} คน พร้อมจัดกลุ่ม 5 ขั้นตอนแล้ว`);
+          } catch (err) {
+            alert('ไม่สามารถอ่านไฟล์ JSON ได้ กรุณาตรวจสอบความถูกต้องของไฟล์');
+          }
+        };
+        reader.readAsText(file, 'UTF-8');
+        return;
+      }
+
+      // 2. กรณีเป็นไฟล์ Excel (.xlsx, .xls) หรือ CSV (.csv)
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+        reader.onload = function(evt) {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+            if (!aoa || aoa.length === 0) {
+              alert('ไฟล์ Excel/CSV ว่างเปล่า หรือไม่พบแถวข้อมูล');
+              return;
+            }
+
+            const mainDivMap = {
+              'สบก': 'สำนักบริหารกลาง',
+              'ศทส': 'ศูนย์เทคโนโลยีสารสนเทศและการสื่อสาร',
+              'สตป': 'สำนักตรวจสอบและประเมินผล',
+              'สนย': 'สำนักนโยบายและยุทธศาสตร์',
+              'สบค': 'สำนักบริหารทรัพยากรบุคคล',
+              'ศปท': 'ศูนย์ปฏิบัติการต่อต้านการทุจริต',
+              'กกม': 'กลุ่มกฎหมาย',
+              'กตน': 'กลุ่มตรวจสอบภายใน',
+              'กพร': 'กลุ่มพัฒนาระบบบริหาร',
+              'สศค': 'สำนักงานเศรษฐกิจการคลัง'
+            };
+
+            const subdivToMainMap = {
+              'ส่วนพัฒนาบุคคล': 'สำนักบริหารทรัพยากรบุคคล',
+              'ส่วนแผนและประเมินผล': 'สำนักตรวจสอบและประเมินผล',
+              'ส่วนพัฒนาระบบตรวจสอบ': 'สำนักตรวจสอบและประเมินผล',
+              'ส่วนตรวจราชการ': 'สำนักตรวจสอบและประเมินผล',
+              'ส่วนบริหารการคลัง': 'สำนักบริหารกลาง',
+              'ส่วนอำนวยการ': 'สำนักบริหารกลาง',
+              'ส่วนบริหารทั่วไป': 'สำนักบริหารกลาง',
+              'ฝ่ายการพัสดุ': 'สำนักบริหารกลาง',
+              'ฝ่ายสารบรรณ': 'สำนักบริหารกลาง'
+            };
+
+            let currentDept = 'สำนักงานปลัดกระทรวงการคลัง';
+            let currentGroup = '';
+            let currentUnit = '';
+            let currentMainDivision = '';
+            const mappedList = [];
+
+            for (let r = 0; r < aoa.length; r++) {
+              const row = aoa[r];
+              if (!row || row.length === 0) continue;
+
+              const colA = String(row[0] || '').trim();
+              const colB = String(row[1] || '').trim();
+              const colC = String(row[2] || '').trim();
+              const colD = String(row[3] || '').trim();
+              const colE = String(row[4] || '').trim();
+
+              if (colA.includes('ชื่อหน่วยงาน')) {
+                currentDept = colA.replace(/ชื่อหน่วยงาน\s*:/g, '').trim();
+                continue;
+              }
+              if (colA.includes('กลุ่มบุคลากร')) {
+                currentGroup = colA.replace(/กลุ่มบุคลากร\s*:/g, '').trim();
+                currentUnit = '';
+                currentMainDivision = currentGroup;
+                continue;
+              }
+              if (colA.includes('หน่วยงาน') && !colA.includes('ชื่อหน่วยงาน')) {
+                currentUnit = colA.replace(/หน่วยงาน\s*:/g, '').trim();
+                currentGroup = '';
+                currentMainDivision = '';
+
+                const mBracket = currentUnit.match(/\(([ก-๙.]+)\)/u);
+                if (mBracket) {
+                  const abbr = mBracket[1].replace(/\./g, '');
+                  if (mainDivMap[abbr]) currentMainDivision = mainDivMap[abbr];
+                }
+                if (!currentMainDivision) {
+                  const mPrefix = currentUnit.match(/^([ก-๙]{2,4})\./u);
+                  if (mPrefix && mainDivMap[mPrefix[1]]) currentMainDivision = mainDivMap[mPrefix[1]];
+                }
+                if (!currentMainDivision) {
+                  const cleanU = currentUnit.replace(/\./g, '');
+                  if (mainDivMap[cleanU]) currentMainDivision = mainDivMap[cleanU];
+                }
+                if (!currentMainDivision && subdivToMainMap[currentUnit]) {
+                  currentMainDivision = subdivToMainMap[currentUnit];
+                }
+                if (!currentMainDivision) {
+                  currentMainDivision = currentUnit;
+                }
+                continue;
+              }
+
+              // แถวรายชื่อที่มีตัวเลขลำดับใน Col A
+              if (/^\d+$/.test(colA) && colB && colB !== 'ชื่อ-นามสกุล') {
+                const seq = parseInt(colA);
+                const name = colB;
+                const pos = colC;
+                const email = colD;
+                const phone = colE;
+
+                let gender = 'ไม่ระบุ';
+                let prename = '';
+                const mMale = name.match(/^(นาย|ว่าที่ร้อยตรี|ว่าที่ร้อยโท|ร้อยตรี|ร้อยโท|ร้อยตำรวจโท|พลฯ)/u);
+                const mFemale = name.match(/^(นางสาว|นาง|ว่าที่ร้อยตำรวจโทหญิง|ว่าที่ร้อยตรีหญิง)/u);
+                if (mMale) { gender = 'ชาย'; prename = mMale[1]; }
+                else if (mFemale) { gender = 'หญิง'; prename = mFemale[1]; }
+
+                const div = currentMainDivision || currentUnit || currentGroup || 'ส่วนกลาง';
+                const subdiv = currentUnit || currentGroup || div;
+
+                let level = 'ทั่วไป';
+                const lm = pos.match(/(ทรงคุณวุฒิ|เชี่ยวชาญ|ชำนาญการพิเศษ|ชำนาญการ|ชำนาญงาน|ปฏิบัติการ|ปฏิบัติงาน)/u);
+                if (lm) level = lm[1];
+                else if (div === 'ผู้บริหารระดับสูง' || /ปลัด|ผู้ตรวจ|ที่ปรึกษา|อธิบดี|ผู้อำนวยการ/u.test(pos)) level = 'ผู้บริหารระดับสูง';
+                else if (currentGroup) level = currentGroup;
+
+                mappedList.push({
+                  seq: seq,
+                  name: name,
+                  prename_th: prename,
+                  gender: gender,
+                  POSITION: pos,
+                  position: pos,
+                  department: currentDept,
+                  division: div,
+                  subdiv1: subdiv,
+                  levelname_th: level,
+                  email: email,
+                  phone: phone
+                });
+              }
+            }
+
+            if (mappedList.length === 0) {
+              alert('ไม่พบแถวข้อมูลรายชื่อในไฟล์ Excel กรุณาตรวจสอบโครงสร้างไฟล์');
+              return;
+            }
+
+            allUsers = mappedList;
+            document.getElementById('headerTotalCount').innerText = allUsers.length;
+            resetAllStages();
+            closeUploadModal();
+            alert(`นำเข้าไฟล์ Excel "${file.name}" สำเร็จเรียบร้อย! พบข้อมูลทั้งหมด ${mappedList.length} คน พร้อมจำแนกเข้า 5 ลำดับขั้นทันที`);
+          } catch (err) {
+            console.error(err);
+            alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ' + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+
+      alert('กรุณาเลือกไฟล์สกุล .xlsx, .xls, .csv หรือ .json เท่านั้น');
+    }
+
+    // ==========================================
+    // ระบบจัดการรายชื่อผู้เข้าร่วม (เหมือนหน้าสุ่มแบบรวม)
+    // ==========================================
+    const MANAGE_ACTIVE_KEY = 'sport_stage_active_users';
+    let manageDirty = false;
+
+    function getActiveFlags() {
+      try {
+        const raw = localStorage.getItem(MANAGE_ACTIVE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function saveActiveFlags() {
+      try {
+        const flags = {};
+        allUsers.forEach(u => { if (u.active === false) flags[getPersonKey(u)] = false; });
+        localStorage.setItem(MANAGE_ACTIVE_KEY, JSON.stringify(flags));
+      } catch (e) {}
+    }
+
+    function applySavedActiveFlags(list) {
+      const flags = getActiveFlags() || {};
+      list.forEach(u => { u.active = flags[getPersonKey(u)] !== false; });
+      return list;
+    }
+
+    function openManageModal() {
+      fillFilterOptions();
+      document.getElementById('manageModal').classList.remove('hidden');
+      manageDirty = false;
+      renderModalUserList();
+    }
+
+    function closeManageModal() {
+      document.getElementById('manageModal').classList.add('hidden');
+      if (manageDirty) {
+        applyManagedSelection();
+        manageDirty = false;
+      }
+      updateManageCounts();
+    }
+
+    function updateManageCounts() {
+      const activeCount = allUsers.filter(u => u.active !== false).length;
+      const totalCount = allUsers.length;
+      const sel = document.getElementById('modalSelectedCount');
+      const tot = document.getElementById('modalTotalCount');
+      const hdr = document.getElementById('headerTotalCount');
+      if (sel) sel.textContent = activeCount;
+      if (tot) tot.textContent = totalCount;
+      if (hdr) hdr.innerText = activeCount;
+    }
+
+    // รูปย่อสำหรับตารางใน modal (ไม่ผูกกับอัปโหลด)
+    function modalAvatarHtml(u) {
+      const key = getPersonKey(u);
+      const url = getAvatarUrl(key) || (u && u.photo) || '';
+      const isMale = u.gender === 'ชาย';
+      const bg = isMale ? 'bg-blue-50 text-blue-500' : 'bg-rose-50 text-rose-500';
+      const icon = isMale ? 'fa-user-tie' : 'fa-user';
+      return `<div class="w-9 h-9 rounded-lg overflow-hidden ring-1 ring-slate-200 shrink-0 ${bg} flex items-center justify-center">${
+        url
+          ? `<img src="${url}" alt="" loading="lazy" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling&&this.nextElementSibling.classList.remove('hidden')"><i class="fa-solid ${icon} text-xs hidden"></i>`
+          : `<i class="fa-solid ${icon} text-xs"></i>`
+      }</div>`;
+    }
+
+
+    // เติมตัวเลือก dropdown ของตัวกรองจากข้อมูลจริง (ไม่ hardcode)
+    function fillFilterOptions() {
+      const src = (typeof allUsers !== 'undefined' && allUsers.length) ? allUsers
+                : (typeof processedUsers !== 'undefined' ? processedUsers : []);
+      const uniq = (arr) => Array.from(new Set(arr.map(v => String(v || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'th'));
+      const safe = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+      const fillSelect = (id, values) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const keep = el.value;
+        el.innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v => '<option value="' + safe(v) + '">' + safe(v) + '</option>').join('');
+        if (keep && Array.from(el.options).some(o => o.value === keep)) el.value = keep;
+      };
+
+      const fillList = (id, values) => {
+        let dl = document.getElementById(id);
+        if (!dl) { dl = document.createElement('datalist'); dl.id = id; document.body.appendChild(dl); }
+        dl.innerHTML = values.map(v => '<option value="' + safe(v) + '"></option>').join('');
+      };
+
+      fillSelect('mfPosition', uniq(src.map(u => u.position || u.POSITION || u.levelname_th || u.level || '')));
+      fillSelect('mfSubdiv', uniq(src.map(u => u.subdiv1 || u.subdiv || '')));
+      fillSelect('mfDivision', uniq(src.map(u => u.division || u.section || '')));
+      fillList('mfNameList', uniq(src.map(u => u.name || '')));
+      fillList('mfEmailList', uniq(src.map(u => u.email || '')));
+    }
+
+    // แท็บกรองมุมมองใน modal: ทุกคน / เข้าร่วม / ถูกตัดออก
+    let modalScope = 'all';
+
+    function setModalScope(scope) {
+      modalScope = scope;
+      renderModalUserList();
+    }
+
+    function updateModalScopeTabs() {
+      const inactive = allUsers.filter(u => u.active === false).length;
+      const counts = { all: allUsers.length, active: allUsers.length - inactive, inactive: inactive };
+      ['all', 'active', 'inactive'].forEach((key) => {
+        const btn = document.getElementById('modalTab-' + key);
+        if (!btn) return;
+        const badge = document.getElementById('modalTabCount-' + key);
+        if (badge) badge.textContent = '(' + counts[key] + ')';
+        const on = modalScope === key;
+        btn.className = 'px-3 py-1.5 rounded-md font-medium transition ' + (on ? 'bg-white text-royal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700');
+      });
+    }
+
+    function modalFilterValues() {
+      const v = (id) => { const el = document.getElementById(id); return el ? String(el.value || '').trim().toLowerCase() : ''; };
+      return {
+        name: v('mfName'), gender: v('mfGender'), position: v('mfPosition'),
+        subdiv: v('mfSubdiv'), division: v('mfDivision'), email: v('mfEmail')
+      };
+    }
+
+    function clearModalFilters() {
+      ['mfName', 'mfGender', 'mfPosition', 'mfSubdiv', 'mfDivision', 'mfEmail', 'modalSearchInput'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      renderModalUserList();
+    }
+
+    function renderModalUserList() {
+      const tbody = document.getElementById('modalUserTableBody');
+      if (!tbody) return;
+      const keyword = (document.getElementById('modalSearchInput').value || '').trim().toLowerCase();
+      tbody.innerHTML = '';
+
+      updateModalScopeTabs();
+      const mf = modalFilterValues();
+      const rows = allUsers.filter(u => {
+        if (keyword) {
+          const hay = [u.name, u.division, u.position, u.email, u.levelname_th].join(' ').toLowerCase();
+          if (!hay.includes(keyword)) return false;
+        }
+        if (mf.name && !String(u.name || '').toLowerCase().includes(mf.name)) return false;
+        if (mf.gender && String(u.gender || '') !== mf.gender) return false;
+        if (mf.position && !String(u.position || u.levelname_th || '').toLowerCase().includes(mf.position)) return false;
+        if (mf.subdiv && !String(u.subdiv1 || '').toLowerCase().includes(mf.subdiv)) return false;
+        if (mf.division && !String(u.division || '').toLowerCase().includes(mf.division)) return false;
+        if (mf.email && !String(u.email || '').toLowerCase().includes(mf.email)) return false;
+        if (modalScope === 'active' && u.active === false) return false;
+        if (modalScope === 'inactive' && u.active !== false) return false;
+        return true;
+      });
+      const fcount = document.getElementById('modalFilteredCount');
+      if (fcount) fcount.textContent = rows.length;
+
+      rows.forEach(u => {
+        const isActive = u.active !== false;
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-50 transition border-b border-slate-100 ${!isActive ? 'opacity-40 bg-slate-50' : ''}`;
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-center">
+            <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleUserActive('${getPersonKey(u)}', this.checked)" class="w-4 h-4 text-royal-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer">
+          </td>
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-2.5">
+              ${modalAvatarHtml(u)}
+              <span class="font-medium text-slate-900">${u.name || '-'}</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3">${u.gender || '-'}</td>
+          <td class="py-2.5 px-3"><span class="block max-w-[210px] truncate" title="${u.position || u.levelname_th || ''}">${u.position || u.levelname_th || '-'}</span></td>
+          <td class="py-2.5 px-3 text-slate-600">${u.subdiv1 || '-'}</td>
+          <td class="py-2.5 px-3 text-slate-500">${u.division || '-'}</td>
+          <td class="py-2.5 px-3 text-slate-500"><span class="block max-w-[170px] truncate" title="${u.email || ''}">${u.email || '-'}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateManageCounts();
+    }
+
+    function toggleUserActive(key, isActive) {
+      const user = allUsers.find(u => getPersonKey(u) === key);
+      if (user) user.active = isActive;
+      manageDirty = true;
+      saveActiveFlags();
+      updateManageCounts();
+    }
+
+    function toggleSelectAll(select) {
+      allUsers.forEach(u => { u.active = select; });
+      manageDirty = true;
+      saveActiveFlags();
+      renderModalUserList();
+    }
+
+    function applyManagedSelection() {
+      const active = allUsers.filter(u => u.active !== false);
+      classifyUsersIntoStages(active);
+      // รายชื่อเปลี่ยน → ผลสุ่มเดิมใช้ต่อไม่ได้ ต้องเริ่มใหม่
+      currentTeams = [[], [], [], []];
+      currentStageIndex = 0;
+      stagesInfo.forEach(s => { s.completed = false; });
+      updateManageCounts();
+      updateStepperUI();
+      renderAllViews();
+    }
+
+    function handleManageFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const json = JSON.parse(evt.target.result);
+          if (!Array.isArray(json)) {
+            alert('รูปแบบไฟล์ต้องเป็นรายการ (Array) ของข้อมูลบุคลากร');
+            return;
+          }
+          allUsers = json.map(u => ({ ...u, active: true }));
+          manageDirty = true;
+          try { localStorage.removeItem(MANAGE_ACTIVE_KEY); } catch (err) {}
+          renderModalUserList();
+          alert(`โหลดข้อมูลสำเร็จเรียบร้อย! ทั้งหมดจำนวน ${json.length} รายการ`);
+        } catch (err) {
+          alert('ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบว่าเป็นไฟล์ JSON ที่ถูกต้อง');
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    async function resetToDefaultData() {
+      try {
+        let data = null;
+        const r1 = await fetch('officials_504.json');
+        if (r1.ok) data = await r1.json();
+        else {
+          const r2 = await fetch('performance-appraisal.users19.json');
+          if (r2.ok) data = await r2.json();
+        }
+        if (!Array.isArray(data) || data.length === 0) throw new Error('bad data');
+        allUsers = data.map(u => ({ ...u, active: true }));
+        manageDirty = true;
+        try { localStorage.removeItem(MANAGE_ACTIVE_KEY); } catch (err) {}
+        renderModalUserList();
+      } catch (e) {
+        alert('ไม่สามารถโหลดข้อมูลตั้งต้นได้');
+      }
+    }
+
+    // เริ่มต้นระบบเมื่อโหลดหน้า
+    window.addEventListener('DOMContentLoaded', async () => {
+      await window.DATA_LOADED;
+      initAvatarSystem();
+      if (window.INITIAL_USER_DATA && window.INITIAL_USER_DATA.length > 0) {
+        allUsers = applySavedActiveFlags(window.INITIAL_USER_DATA.map(u => ({ ...u, active: true })));
+        updateManageCounts();
+        classifyUsersIntoStages(allUsers.filter(u => u.active !== false));
+        const restored = restoreSavedState();
+        updateStepperUI();
+        renderAllViews();
+      }
+    });
+  </script>
+
+  <!-- หน้าต่างเปิดขึ้นมา (Modal): จัดการรายชื่อผู้เข้าร่วม -->
+  <div id="manageModal" class="fixed inset-0 z-50 bg-[#0b1f48]/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+
+      <!-- ส่วนหัวของ Modal -->
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-royal-100 text-royal-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-users-gear"></i>
+          </span>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 font-heading">จัดการรายชื่อผู้เข้าร่วมกิจกรรม</h3>
+            <p class="text-xs text-slate-500">เลือกติ๊กเพื่อเปิด/ปิดผู้เข้าร่วม หรืออัปโหลดไฟล์ข้อมูลใหม่</p>
+          </div>
+        </div>
+        <button onclick="closeManageModal()" class="text-slate-400 hover:text-slate-600 p-2 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- แถบเครื่องมือจัดการรายชื่อ -->
+      <div class="p-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-slate-100 rounded-lg p-0.5 mr-1">
+            <button id="modalTab-all" onclick="setModalScope('all')" class="px-3 py-1.5 rounded-md font-medium transition">ทุกคน <span id="modalTabCount-all"></span></button>
+            <button id="modalTab-active" onclick="setModalScope('active')" class="px-3 py-1.5 rounded-md font-medium transition">เข้าร่วมสุ่ม <span id="modalTabCount-active"></span></button>
+            <button id="modalTab-inactive" onclick="setModalScope('inactive')" class="px-3 py-1.5 rounded-md font-medium transition">ถูกตัดออก <span id="modalTabCount-inactive"></span></button>
+          </div>
+          <button onclick="toggleSelectAll(true)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition">
+            เลือกทุกคน
+          </button>
+          <button onclick="toggleSelectAll(false)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition">
+            ไม่เลือกทุกคน
+          </button>
+          <span class="text-slate-500 text-xs ml-2">
+            พร้อมเข้าร่วมสุ่ม: <strong id="modalSelectedCount" class="text-royal-600">0</strong> / <span id="modalTotalCount">0</span> คน
+          </span>
+          <span class="text-slate-400 text-xs ml-1">• แสดง <strong id="modalFilteredCount" class="text-slate-700">0</strong> รายการ</span>
+          <button onclick="clearModalFilters()" class="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-600 font-medium transition" title="ล้างตัวกรองทั้งหมด">
+            <i class="fa-solid fa-filter-circle-xmark mr-1"></i>ล้างตัวกรอง
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="px-3.5 py-1.5 bg-royal-50 hover:bg-royal-100 border border-royal-200 rounded-xl cursor-pointer text-royal-700 font-medium text-xs flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-upload"></i>
+            <span>เลือกไฟล์ JSON ใหม่</span>
+            <input type="file" id="manageJsonFileInput" accept=".json" onchange="handleManageFileUpload(event)" class="hidden">
+          </label>
+          <button onclick="resetToDefaultData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 text-xs font-medium transition" title="โหลดข้อมูลตั้งต้นจากไฟล์เดิม">
+            โหลดข้อมูลเดิม
+          </button>
+        </div>
+      </div>
+
+      <!-- ช่องพิมพ์ค้นหาใน Modal -->
+      <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
+        <input type="text" id="modalSearchInput" oninput="renderModalUserList()" placeholder="พิมพ์ชื่อเพื่อค้นหาแล้วติ๊กเลือก..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none">
+      </div>
+
+      <!-- ตารางรายชื่อใน Modal -->
+      <div class="flex-1 overflow-y-auto px-4 pb-4 custom-scroll">
+        <table class="w-full text-xs text-left">
+          <thead class="text-slate-600 font-semibold">
+            <tr>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2.5 px-3 w-14 text-center shadow-[inset_0_-1px_0_0_#cbd5e1]">เข้าร่วม</th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] min-w-[180px]"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">ชื่อ - นามสกุล</div><input id="mfName" list="mfNameList" oninput="renderModalUserList()" placeholder="พิมพ์/เลือกชื่อ" class="w-full px-2 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-400 focus:outline-none"></th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] w-24"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">เพศ</div><select id="mfGender" onchange="renderModalUserList()" class="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 focus:ring-1 focus:ring-sky-500 focus:outline-none"><option value="">ทั้งหมด</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select></th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] min-w-[170px]"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">ระดับตำแหน่ง</div><select id="mfPosition" onchange="renderModalUserList()" class="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 focus:ring-1 focus:ring-sky-500 focus:outline-none"><option value="">ทั้งหมด</option></select></th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] min-w-[150px]"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">ส่วนงานย่อย</div><select id="mfSubdiv" onchange="renderModalUserList()" class="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 focus:ring-1 focus:ring-sky-500 focus:outline-none"><option value="">ทั้งหมด</option></select></th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] min-w-[170px]"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">สำนัก / กอง</div><select id="mfDivision" onchange="renderModalUserList()" class="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 focus:ring-1 focus:ring-sky-500 focus:outline-none"><option value="">ทั้งหมด</option></select></th>
+              <th class="sticky top-0 z-20 bg-slate-100 py-2 px-2 shadow-[inset_0_-1px_0_0_#cbd5e1] min-w-[150px]"><div class="text-[11px] font-bold text-slate-600 mb-1 whitespace-nowrap">อีเมล</div><input id="mfEmail" list="mfEmailList" oninput="renderModalUserList()" placeholder="พิมพ์/เลือกอีเมล" class="w-full px-2 py-1 rounded-md border border-slate-300 bg-white text-[11px] font-normal text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-400 focus:outline-none"></th>
+            </tr>
+          </thead>
+          <tbody id="modalUserTableBody" class="divide-y divide-slate-100">
+            <!-- แสดงผลด้วย JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ส่วนท้ายของ Modal -->
+      <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+        <button onclick="closeManageModal()" class="px-5 py-2 rounded-xl bg-royal-700 hover:bg-royal-800 text-white font-medium text-xs transition shadow-xs">
+          บันทึกและปิดหน้าต่าง
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Input สำหรับอัปโหลดรูปภาพประจำตัว -->
+  <input type="file" id="globalAvatarInput" accept="image/*" class="hidden" onchange="handleAvatarFileSelected(event)">
+
+  <!-- Toast แจ้งเตือนเมื่ออัปโหลดรูปภาพเสร็จสิ้น -->
+  <div id="avatarToast" style="position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;align-items:center;gap:10px;background:#1e293b;color:#fff;padding:12px 16px;border-radius:16px;font-size:13px;transform:translateY(80px);opacity:0;transition:all 0.3s;pointer-events:none;border:1px solid #334155;">
+    <span style="width:24px;height:24px;border-radius:50%;background:rgba(16,185,129,0.2);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:12px;">✓</span>
+    <span id="avatarToastText">อัปโหลดรูปถ่ายเรียบร้อยแล้ว</span>
+  </div>
+<script>
+(function () {
+  'use strict';
+  var CARD_ID = 'personHoverCard';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function findPerson(id) {
+    try {
+      if (typeof stagePools !== 'undefined' && Array.isArray(stagePools)) {
+        for (var i = 0; i < stagePools.length; i++) {
+          var hit = (stagePools[i] || []).find(function (x) { return String(x.id) === String(id); });
+          if (hit) return hit;
+        }
+      }
+    } catch (e) {}
+    try {
+      if (typeof processedUsers !== 'undefined' && Array.isArray(processedUsers)) {
+        var h2 = processedUsers.find(function (x) { return String(x.id) === String(id); });
+        if (h2) return h2;
+      }
+    } catch (e) {}
+    try {
+      if (typeof allUsers !== 'undefined' && Array.isArray(allUsers)) {
+        var h3 = allUsers.find(function (x) { return String(x.id) === String(id); });
+        if (h3) return h3;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function row(icon, label, value) {
+    if (!value) return '';
+    return '<div class="flex items-start gap-2 leading-snug">' +
+      '<i class="fa-solid ' + icon + ' text-slate-400 w-3.5 mt-[2px] text-[10px] text-center"></i>' +
+      '<div class="min-w-0 flex-1"><span class="text-slate-400">' + esc(label) + ': </span>' +
+      '<span class="text-slate-700 break-words">' + esc(value) + '</span></div></div>';
+  }
+
+  function buildHtml(u) {
+    var raw = u.raw || {};
+    var name = u.name || raw.name || '';
+    var pos = u.position || u.POSITION || raw.position || raw.POSITION || '';
+    var dept = u.department || raw.department || '';
+    var div = u.division || raw.division || '';
+    var sub = [u.subdiv || u.subdiv1 || raw.subdiv1 || '', u.subdiv2 || raw.subdiv2 || ''].filter(Boolean).join(' / ');
+    var group = u.group || raw.group || '';
+    var unit = u.unit || raw.unit || '';
+    var level = u.level || u.levelname_th || raw.levelname_th || '';
+    // legacy files put the group name in levelname_th, and VIP records use the
+    // division field as a placeholder — drop duplicates instead of printing twice
+    if (group === div) group = '';
+    if (unit === div || unit === group) unit = '';
+    if (level === div || level === group || level === unit) level = '';
+    var email = u.email || raw.email || '';
+    var gender = u.gender || raw.gender || '';
+
+    var photo = u.photo || raw.photo || '';
+    var av = photo
+      ? '<img src="' + esc(photo) + '" alt="" class="w-12 h-12 rounded-xl object-cover object-top border border-slate-200 shrink-0" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+        '<div style="display:none" class="w-12 h-12 rounded-xl border border-slate-200 bg-slate-100 items-center justify-center text-slate-400 shrink-0"><i class="fa-solid fa-user text-lg"></i></div>'
+      : '<div class="w-12 h-12 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 shrink-0"><i class="fa-solid fa-user text-lg"></i></div>';
+
+    var pill = gender
+      ? '<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ' +
+        (gender === 'ชาย' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-rose-50 text-rose-700 border border-rose-200') +
+        '"><i class="fa-solid ' + (gender === 'ชาย' ? 'fa-person' : 'fa-person-dress') + ' text-[9px]"></i>' + esc(gender) + '</span>'
+      : '';
+
+    return '' +
+      '<div class="flex items-start gap-3">' +
+        av +
+        '<div class="min-w-0 flex-1">' +
+          '<div class="font-bold text-slate-900 text-sm leading-snug break-words">' + esc(name) + '</div>' +
+          '<div class="text-[11px] text-slate-500 mt-0.5 leading-snug break-words">' + esc(pos || '-') + '</div>' +
+          (pill ? '<div class="mt-1.5">' + pill + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="mt-3 pt-3 border-t border-slate-100 space-y-1.5 text-[11px]">' +
+        row('fa-sitemap', 'สังกัด', dept) +
+        row('fa-building', 'สำนัก/กอง', div) +
+        row('fa-diagram-project', 'ส่วน/ฝ่าย', sub) +
+        row('fa-layer-group', 'กลุ่ม', group) +
+        row('fa-people-group', 'หน่วย', unit) +
+        row('fa-ranking-star', 'ระดับ', level) +
+        row('fa-envelope', 'อีเมล', email) +
+      '</div>';
+  }
+
+  function ensureCard() {
+    var el = document.getElementById(CARD_ID);
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = CARD_ID;
+    el.className = 'hidden';
+    // inline styles so the card looks right even if the CDN stylesheet is slow/blocked
+    var st = el.style;
+    st.position = 'fixed';
+    st.zIndex = '9999';
+    st.width = 'min(21rem, calc(100vw - 1.5rem))';
+    st.background = '#fff';
+    st.border = '1px solid #e2e8f0';
+    st.borderRadius = '1rem';
+    st.boxShadow = '0 24px 48px -12px rgba(15,23,42,.25)';
+    st.padding = '1rem';
+    st.pointerEvents = 'none';
+    st.top = '0px';
+    st.left = '0px';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  var current = null;
+
+  function place(e) {
+    var el = ensureCard();
+    var pad = 14;
+    var w = el.offsetWidth || 336;
+    var h = el.offsetHeight || 220;
+    var x = e.clientX + pad;
+    var y = e.clientY + pad;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - pad;
+    el.style.left = Math.max(8, x) + 'px';
+    el.style.top = Math.max(8, y) + 'px';
+  }
+
+  function show(holder, e) {
+    var u = findPerson(holder.getAttribute('data-pid'));
+    if (!u) return;
+    var el = ensureCard();
+    el.innerHTML = buildHtml(u);
+    el.classList.remove('hidden');
+    place(e);
+    current = holder;
+  }
+
+  function hide() {
+    var el = document.getElementById(CARD_ID);
+    if (el) el.classList.add('hidden');
+    current = null;
+  }
+
+  document.addEventListener('mouseover', function (e) {
+    var holder = e.target.closest && e.target.closest('[data-pid]');
+    if (!holder || holder === current) return;
+    show(holder, e);
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!current) return;
+    var holder = e.target.closest && e.target.closest('[data-pid]');
+    if (!holder) { hide(); return; }
+    place(e);
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    var holder = e.target.closest && e.target.closest('[data-pid]');
+    if (!holder) return;
+    if (e.relatedTarget && holder.contains(e.relatedTarget)) return;
+    hide();
+  });
+
+  window.addEventListener('scroll', hide, true);
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+
+  var MODAL_ID = 'roundResultModal';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function ensureModal() {
+    var el = document.getElementById(MODAL_ID);
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = MODAL_ID;
+    el.className = 'hidden fixed inset-0 z-[9998] bg-slate-900/50 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto';
+    el.innerHTML =
+      '<div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden" id="rrPanel">' +
+        '<div class="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 sm:px-5 py-3.5 flex items-start justify-between gap-4">' +
+          '<div class="min-w-0">' +
+            '<h3 id="rrTitle" class="font-bold text-slate-900 text-sm sm:text-base truncate"></h3>' +
+            '<p id="rrSub" class="text-[11px] sm:text-xs text-slate-500 mt-0.5"></p>' +
+          '</div>' +
+          '<button type="button" onclick="closeRoundResult()" class="w-8 h-8 shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">' +
+            '<i class="fa-solid fa-xmark"></i>' +
+          '</button>' +
+        '</div>' +
+        '<div id="rrBody" class="p-3 sm:p-5"></div>' +
+      '</div>';
+    el.addEventListener('click', function (e) { if (e.target === el) closeRoundResult(); });
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function avatar(u) {
+    if (u.photo) {
+      return '<img src="' + esc(u.photo) + '" alt="" class="w-8 h-8 rounded-lg object-cover object-top border border-slate-200 shrink-0" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+             '<div style="display:none" class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 items-center justify-center text-slate-400 shrink-0"><i class="fa-solid fa-user text-[11px]"></i></div>';
+    }
+    return '<div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0"><i class="fa-solid fa-user text-[11px]"></i></div>';
+  }
+
+  function membersOf(stageNum) {
+    var out = [];
+    for (var t = 0; t < 4; t++) {
+      (currentTeams[t] || []).forEach(function (u) {
+        if (Number(u.assignedStage) === Number(stageNum)) out.push({ u: u, team: t });
+      });
+    }
+    return out;
+  }
+
+  window.showRoundResult = function (stageNum) {
+    var modal = ensureModal();
+    var info = (typeof stagesInfo !== 'undefined' && stagesInfo[stageNum - 1]) || { title: 'รอบที่ ' + stageNum, sub: '' };
+    var members = membersOf(stageNum);
+
+    document.getElementById('rrTitle').innerHTML =
+      '<i class="fa-solid ' + (info.icon || 'fa-circle') + ' mr-1.5"></i>ผลการสุ่มรอบที่ ' + stageNum + ': ' + esc(info.title);
+    document.getElementById('rrSub').innerText = members.length
+      ? (info.sub ? info.sub + ' • ' : '') + 'รวม ' + members.length + ' ท่าน'
+      : 'ยังไม่ได้สุ่มรอบนี้';
+
+    if (!members.length) {
+      document.getElementById('rrBody').innerHTML =
+        '<div class="text-center py-14 text-slate-400 text-sm">' +
+          '<i class="fa-solid fa-hourglass-half text-3xl mb-2 block text-slate-300"></i>' +
+          'รอบที่ ' + stageNum + ' ยังไม่ได้สุ่ม' +
+          '<div class="text-xs mt-1">กดปุ่ม "กดสุ่มรอบที่ ' + stageNum + '" ก่อน แล้วกลับมาดูผลได้ทุกเมื่อ</div>' +
+        '</div>';
+      modal.classList.remove('hidden');
+      return;
+    }
+
+    var html = '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">';
+    for (var t = 0; t < 4; t++) {
+      var list = members.filter(function (m) { return m.team === t; }).map(function (m) { return m.u; });
+      var th = teamTheme[t];
+      html += '<div class="rounded-xl border ' + th.border + ' overflow-hidden flex flex-col">' +
+        '<div class="' + th.bg + ' px-3 py-2 border-b ' + th.border + ' flex items-center justify-between">' +
+          '<span class="font-bold text-xs ' + th.text + '"><span class="inline-block w-2 h-2 rounded-full ' + th.bar + ' mr-1.5"></span>' + esc(th.name) + '</span>' +
+          '<span class="text-[11px] font-bold ' + th.text + '">' + list.length + ' คน</span>' +
+        '</div>' +
+        '<div class="divide-y divide-slate-100 overflow-y-auto max-h-[58vh] custom-scroll">' +
+        (list.length ? list.map(function (u) {
+          return '<div data-pid="' + esc(u.id) + '" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 transition">' +
+            avatar(u) +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="text-[11px] font-semibold text-slate-800 truncate">' + esc(u.name) + '</div>' +
+              '<div class="text-[10px] text-slate-500 truncate">' + esc(u.position || '-') + '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('') : '<div class="px-3 py-6 text-center text-[11px] text-slate-400">ไม่มีรายชื่อในสีนี้</div>') +
+        '</div>' +
+      '</div>';
+    }
+    html += '</div>';
+    document.getElementById('rrBody').innerHTML = html;
+    modal.classList.remove('hidden');
+  };
+
+  window.closeRoundResult = function () {
+    var el = document.getElementById(MODAL_ID);
+    if (el) el.classList.add('hidden');
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeRoundResult();
+  });
+
+  // make the 5 stepper cards clickable
+  for (var i = 1; i <= 5; i++) {
+    (function (n) {
+      var card = document.getElementById('stepCard-' + n);
+      if (!card) return;
+      card.classList.add('cursor-pointer', 'hover:shadow-md', 'hover:-translate-y-0.5');
+      card.setAttribute('title', 'คลิกเพื่อดูผลการสุ่มรอบที่ ' + n + ' (ดูย้อนหลังได้)');
+      try {
+        var badge = card.querySelector('span.font-bold');
+        if (badge) badge.insertAdjacentHTML('beforeend', ' <i class="fa-solid fa-eye text-[9px] opacity-75"></i>');
+      } catch (e) { /* hint icon is cosmetic only */ }
+      card.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.showRoundResult(n);
+      });
+    })(i);
+  }
+})();
+
+</script>
+</body>
+</html>
+

@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sport-spin
+  namespace: sport-spin
+  labels:
+    app.kubernetes.io/name: sport-spin
+  annotations:
+    # cert-manager: comment out both cert-manager lines if TLS is issued elsewhere.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Traefik v3: terminate on the TLS entrypoint. HTTP -> HTTPS redirection is
+    # handled by the chart's default web -> websecure redirect entrypoint.
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - sport.example.go.th
+      secretName: sport-spin-tls
+  rules:
+    - host: sport.example.go.th
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sport-spin
+                port:
+                  name: http

@@ -1,0 +1,34 @@
+# dependencies / build
+node_modules/
+*.log
+npm-debug.log*
+
+# environment and secrets
+.env
+.env.*
+!.env.example
+.secrets/
+
+# editor / tooling
+.idea/
+.vscode/
+.serena/
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# PERSONAL DATA — intentionally NOT in git.
+# These files hold real staff records (names, e-mails, photos, bcrypt password
+# hashes, signature images). Supply them on the server / in CI instead:
+#   officials_live.json, officials_504.json, latest_spin.json,
+#   performance-appraisal.users19.json, uploads/photos/
+# ---------------------------------------------------------------------------
+officials_live.json
+officials_504.json
+latest_spin.json
+performance-appraisal.users19.json
+uploads/photos/
+*.xlsx
+
+# runtime state written by the app
+uploads/avatars/

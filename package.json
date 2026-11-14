@@ -1,0 +1,10 @@
+{
+  "name": "sport-spin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "สุ่มแบ่งกลุ่ม 4 สี — Vercel build (converted from PHP)",
+  "scripts": {
+    "dev": "node dev/server.cjs",
+    "start": "node server.cjs"
+  }
+}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sport-spin-state
+  namespace: sport-spin
+  labels:
+    app.kubernetes.io/name: sport-spin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  # Set to your cluster's StorageClass (e.g. local-path for k3s, gp3 for EKS).
+  # storageClassName: local-path
