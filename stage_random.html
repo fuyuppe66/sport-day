@@ -9,7 +9,7 @@
   <title>ระบบสุ่มแบ่งกลุ่ม 4 สี แยกตามลำดับขั้น 5 รอบ - สำนักงานปลัดกระทรวงการคลัง</title>
   
   <!-- Fonts -->
-  <link rel="icon" type="image/webp" href="img/Logo4.webp">
+  <link rel="icon" type="image/webp" href="img/Logo1.webp">
   <link rel="apple-touch-icon" href="img/Logo4.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -173,6 +173,10 @@
         const a = await fetch('/api/upload_avatar?action=list');
         if (a.ok) { const d = await a.json(); if (d.avatars) window.INITIAL_USER_AVATARS = d.avatars; }
       } catch (e) {}
+      try {
+        const g = await fetch('officials_ages.json?t=' + Date.now());
+        if (g.ok) window.AGE_MAP = await g.json();
+      } catch (e) {}
     })();
   </script>
 </head>
@@ -197,6 +201,8 @@
           <nav class="flex items-center gap-1" aria-label="เมนูหลัก">
             <a href="index.html" class="px-3 py-1.5 text-[12.5px] font-medium text-slate-500 border-b-2 border-transparent hover:text-[#004B9B] hover:border-[#93C5FD] transition-colors">สุ่มรวม 4 สี</a>
             <a href="stage_random.html" aria-current="page" class="px-3 py-1.5 text-[12.5px] font-semibold text-[#004B9B] border-b-2 border-[#004B9B] rounded-t-md">สุ่ม 5 ลำดับขั้น</a>
+            <a href="compare/division_random.html" class="px-3 py-1.5 text-[12.5px] font-medium text-slate-500 border-b-2 border-transparent hover:text-[#004B9B] hover:border-[#93C5FD] transition-colors">สุ่มตามกลุ่ม/ส่วนงาน</a>
+            <a href="compare/all_random.html" class="px-3 py-1.5 text-[12.5px] font-medium text-slate-500 border-b-2 border-transparent hover:text-[#004B9B] hover:border-[#93C5FD] transition-colors">สุ่มทั้งหมด</a>
           </nav>
           <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-[#F1F6FC] ring-1 ring-[#004B9B]/10 px-2.5 py-1 rounded-full">
             <i class="fa-solid fa-users text-[10px] text-[#004B9B]/70"></i>
@@ -212,10 +218,15 @@
   <div class="bg-white/95 backdrop-blur border-b border-slate-200/90 no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-end gap-2">
 
-      <button onclick="openManageModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition active:scale-95 cursor-pointer">
-        <i class="fa-solid fa-users-gear text-royal-600 text-sm"></i>
-        <span>จัดการรายชื่อ</span>
-      </button>
+      <button onclick="openOfficeModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-building-columns text-royal-600 text-sm"></i>
+              <span>กลุ่มหน่วยงาน</span>
+            </button>
+
+            <button onclick="openManageModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-users-gear text-royal-600 text-sm"></i>
+              <span>จัดการรายชื่อ</span>
+            </button>
 
       <button onclick="openUploadModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-royal-600 hover:bg-royal-700 rounded-xl transition active:scale-95 cursor-pointer">
         <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
@@ -244,7 +255,9 @@
   <!-- เนื้อหาหลัก -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
 
-    <!-- 1. แผง Stepper แสดง 5 ลำดับขั้น (Stages Progress) -->
+    <!-- 0. กลุ่มหน่วยงาน — แสดงใน modal (ปุ่ม "กลุ่มหน่วยงาน" บนแถบเครื่องมือ) -->
+
+        <!-- 1. แผง Stepper แสดง 5 ลำดับขั้น (Stages Progress) -->
     <div class="glass-card rounded-2xl p-5 shadow-sm no-print">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
         <div>
@@ -356,7 +369,7 @@
 
         <div class="flex items-center gap-3 w-full sm:w-auto">
           <!-- ปุ่มกดสุ่มสเต็ปปัจจุบัน -->
-          <button id="btnSpinStage" onclick="spinCurrentStage()" class="btn-glow flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-royal-600 via-royal-700 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white font-bold text-sm shadow-lg shadow-royal-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
+          <button id="btnSpinStage" onclick="handleSpinButton()" class="btn-glow flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-royal-600 via-royal-700 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white font-bold text-sm shadow-lg shadow-royal-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
             <i class="fa-solid fa-dice text-base animate-bounce"></i>
             <span id="btnSpinText">กดสุ่มรอบที่ 1 ทันที</span>
           </button>
@@ -375,7 +388,7 @@
           สุ่มสำเร็จ
         </span>
       </div>
-      <div id="latestRevealList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div id="latestRevealList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-[75vh] overflow-y-auto custom-scroll pr-1">
         <!-- รายการคนที่เพิ่งสุ่มในรอบนี้จะแสดงที่นี่ -->
       </div>
     </div>
@@ -463,6 +476,107 @@
           <span>ชาย: <strong id="male-3" class="text-slate-800">0</strong></span>
           <span>หญิง: <strong id="female-3" class="text-slate-800">0</strong></span>
           <span>ผู้บริหาร: <strong id="vip-3" class="text-amber-600">0</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.6 รอบที่ 5: แบ่งสีตามกลุ่มงาน (กลุ่ม -> ส่วนงาน -> รายชื่อ -> สุ่มตามวัย/เพศ) -->
+    <section id="divisionSplitSection" class="mt-6 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden no-print">
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-royal-600 to-sky-500 text-white flex items-center justify-center shadow-md shadow-royal-600/20 shrink-0">
+            <i class="fa-solid fa-sitemap"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="font-bold text-slate-900 text-sm sm:text-base">รอบที่ 5 · กรอบสำนัก/ศูนย์/กลุ่ม และส่วนงานย่อย</h2>
+            <p class="text-[11px] text-slate-500 mt-0.5">สุ่มเกลี่ยอายุเฉลี่ยเท่าเทียมกันทุกสี · แต่ละสำนักมีสีธีมเฉพาะตัว · ผอ.ส่วน อยู่ร่วมในส่วนงานของตนเอง</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px]">
+          <span id="divisionSplitCount" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">0 กลุ่ม</span>
+          <span id="divisionSplitProgress" class="px-2.5 py-1 rounded-full bg-royal-50 text-royal-700 font-semibold border border-royal-100">สุ่มแล้ว 0/0 คน</span>
+          <span id="ageCoverageChip" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200/70">อายุ 0/0</span>
+          <button type="button" onclick="splitEveryDivisionNow()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-royal-600 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white font-bold shadow-md shadow-royal-600/25 transition active:scale-95">
+            <i class="fa-solid fa-bolt"></i> สุ่มทุกส่วนงานทั้งหมดรวดเดียว
+          </button>
+          <button type="button" onclick="resetDivisionSplits()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition active:scale-95">
+            <i class="fa-solid fa-rotate-left"></i> เริ่มสุ่มใหม่ทั้งหมด
+          </button>
+        </div>
+      </div>
+      <div id="divisionCards" class="p-3 sm:p-4 space-y-4">
+        <!-- Render ผ่าน JavaScript -->
+      </div>
+    </section>
+
+    <!-- Modal: เจาะกลุ่ม -> ส่วนงาน -> รายชื่อ -> ผลแบ่งสี -->
+    <div id="divisionModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeDivisionModal()"></div>
+      <div class="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
+        <div class="w-full max-w-5xl max-h-[92vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3 bg-slate-50/80">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">รอบที่ 5</span>
+                <span id="divisionModalCrumb" class="text-[11px] text-slate-500 truncate"></span>
+              </div>
+              <h3 id="divisionModalTitle" class="font-bold text-slate-900 text-sm sm:text-base truncate">กลุ่มงาน</h3>
+              <p id="divisionModalSub" class="text-[11px] text-slate-500 mt-0.5"></p>
+            </div>
+            <button onclick="closeDivisionModal()" class="shrink-0 w-8 h-8 rounded-lg hover:bg-slate-200/70 text-slate-500 transition" aria-label="ปิด">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="px-4 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-semibold text-slate-500 mr-1">ช่วงวัย:</span>
+            <div id="genFilterChips" class="flex flex-wrap items-center gap-1.5"></div>
+            <span class="text-[11px] font-semibold text-slate-500 ml-2 mr-1">เพศ:</span>
+            <div id="genderFilterChips" class="flex flex-wrap items-center gap-1.5"></div>
+            <div class="flex-1"></div>
+            <button id="btnRunDivisionSplit" onclick="runDivisionSplit()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-royal-600 to-sky-600 hover:from-royal-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-royal-600/25 transition">
+              <i class="fa-solid fa-shuffle"></i> สุ่มแบ่ง 4 สี
+            </button>
+          </div>
+
+          <div id="divisionModalBody" class="p-3 sm:p-4 overflow-y-auto custom-scroll flex-1 bg-slate-50/50">
+            <!-- Render ผ่าน JavaScript -->
+          </div>
+
+          <div id="divisionModalFooter" class="hidden px-4 py-3 border-t border-slate-100 bg-white flex items-center justify-between gap-3">
+            <div id="divisionSplitSummary" class="text-[11px] text-slate-500"></div>
+            <div class="flex items-center gap-2">
+              <button onclick="closeDivisionModal()" class="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition">ปิด</button>
+              <button onclick="applyDivisionSplit()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/25 transition">
+                <i class="fa-solid fa-check"></i> ใช้ผลนี้กับ 4 สี
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: ผลสุ่ม 4 สี ของส่วนงาน (คนในแต่ละสี + สถิติช่วงวัย/อายุ/เพศ) -->
+    <div id="splitResultModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeSplitResult()"></div>
+      <div class="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
+        <div class="w-full max-w-6xl max-h-[92vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3 bg-slate-50/80">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-royal-600 text-white">ผลสุ่ม 4 สี</span>
+                <span id="splitResultTotal" class="text-[11px] text-slate-500"></span>
+              </div>
+              <h3 id="splitResultTitle" class="font-bold text-slate-900 text-sm sm:text-base truncate">ผลการสุ่ม</h3>
+              <p id="splitResultSub" class="text-[11px] text-slate-500 mt-0.5"></p>
+            </div>
+            <button type="button" onclick="closeSplitResult()" class="shrink-0 w-8 h-8 rounded-lg hover:bg-slate-200/70 text-slate-500 transition" aria-label="ปิด">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div id="splitResultBody" class="p-3 sm:p-4 overflow-y-auto custom-scroll flex-1 bg-slate-50/50">
+            <!-- Render ผ่าน JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -718,6 +832,137 @@
       }
     ];
 
+    // ==========================================
+    // กลุ่มหน่วยงาน (eoffice) — เลือกได้มากกว่า 1 แล้วกด "แสดงรายชื่อ" เพื่อรวมรายชื่อ
+    // ==========================================
+    const OFFICES = [
+      { id: 3, name: 'สำนักงานปลัดกระทรวงการคลัง', short: 'สป.กค.', file: 'officials_live.json' },
+      { id: 2, name: 'สำนักงานรัฐมนตรีกระทรวงการคลัง', short: 'สร.กค.', file: 'officials_office2.json' },
+    ];
+    const officeSelected = new Set([3, 2]); // เปิดทั้งสองหน่วยงานไว้เป็นค่าเริ่มต้น (รวมอัตโนมัติ)
+    const officeCache = {};
+    let officeBusy = false;
+
+    async function fetchOfficeList(office) {
+      if (officeCache[office.id]) return officeCache[office.id];
+      const res = await fetch(office.file + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('โหลดรายชื่อ ' + office.short + ' ไม่สำเร็จ (' + res.status + ')');
+      const list = await res.json();
+      officeCache[office.id] = Array.isArray(list) ? list : [];
+      return officeCache[office.id];
+    }
+
+    function renderOfficePicker() {
+      const box = document.getElementById('officeOptions');
+      if (!box) return;
+      box.innerHTML = OFFICES.map(o => {
+              const on = officeSelected.has(o.id);
+              const n = officeCache[o.id] ? officeCache[o.id].length : null;
+              return `
+                <div class="flex items-center gap-3 p-3 rounded-xl border-2 text-left ${on ? 'border-royal-500 bg-royal-50/70 shadow-sm' : 'border-slate-200 bg-white'}">
+                  <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-royal-600 bg-royal-600' : 'border-slate-300 bg-white'}">
+                    ${on ? '<i class="fa-solid fa-check text-white text-[10px]"></i>' : ''}
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block text-[12.5px] font-bold ${on ? 'text-royal-900' : 'text-slate-800'} leading-snug">${o.name}</span>
+                    <span class="block text-[10.5px] text-slate-500 mt-0.5">${n === null ? 'ยังไม่โหลด' : n + ' คน'} · structureId ${o.id}</span>
+                  </span>
+                </div>`;
+            }).join('');
+      const chip = document.getElementById('officeRosterChip');
+            if (chip) {
+              const active = allUsers.filter(u => u.active !== false).length;
+              const total = allUsers.length;
+              const selectedTotal = [...officeSelected].reduce((s, id) => s + ((officeCache[id] || []).length), 0);
+              chip.textContent = total
+                ? (active === total ? `${total} คน` : `${active} / ${total} คน`)
+                : (selectedTotal ? `${selectedTotal} คน` : '0 คน');
+              chip.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-full ' + (total ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-slate-100 text-slate-700');
+            }
+    }
+
+    function toggleOffice(id) {
+      if (officeSelected.has(id)) {
+        if (officeSelected.size === 1) { showAvatarToast('ต้องเลือกอย่างน้อย 1 กลุ่มหน่วยงาน'); return; }
+        officeSelected.delete(id);
+      } else {
+        officeSelected.add(id);
+      }
+      renderOfficePicker();
+    }
+
+    function openOfficeModal() {
+      const m = document.getElementById('officeModal');
+      if (!m) return;
+      renderOfficePicker();
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeOfficeModal() {
+      const m = document.getElementById('officeModal');
+      if (!m) return;
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function applyOfficeSelection(opts) {
+          const silent = !!(opts && opts.silent);
+          if (officeBusy) return;
+          officeBusy = true;
+          const btn = document.querySelector('#officePickerSection button[onclick="applyOfficeSelection()"]');
+          if (btn) btn.disabled = true;
+          try {
+            const lists = [];
+            for (const id of officeSelected) {
+              const office = OFFICES.find(o => o.id === id);
+              lists.push(await fetchOfficeList(office));
+            }
+            const flat = lists.flat();
+
+            // คง object เดิมไว้ (สิทธิ์ active/รูป/สถานะสี) เพื่อไม่ให้ผลสุ่มที่ค้างอยู่หลุด
+            const prevById = new Map(allUsers.map(u => [String(u.id), u]));
+            const seen = new Set();
+            const merged = [];
+            flat.forEach(u => {
+              const key = String(u.id);
+              if (seen.has(key)) return;
+              seen.add(key);
+              const prev = prevById.get(key);
+              const base = prev ? Object.assign(prev, { ...u, active: prev.active !== false }) : { ...u, active: true };
+              merged.push(base);
+            });
+
+            allUsers = applySavedActiveFlags(merged);
+            updateManageCounts();
+            classifyUsersIntoStages(allUsers.filter(u => u.active !== false));
+            if (typeof restoreSavedState === 'function') restoreSavedState();
+            updateStepperUI();
+            renderAllViews();
+            renderOfficePicker();
+            if (!silent) {
+              showAvatarToast(`แสดงรายชื่อ ${allUsers.length} คน จาก ${officeSelected.size} หน่วยงาน`);
+              const sec = document.getElementById('stepperContainer');
+              if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          } catch (err) {
+            if (!silent) showAvatarToast(err.message || 'โหลดรายชื่อไม่สำเร็จ');
+          } finally {
+            officeBusy = false;
+            if (btn) btn.disabled = false;
+          }
+        }
+
+    async function loadOfficeRoster() {
+      Object.keys(officeCache).forEach(k => delete officeCache[k]);
+      renderOfficePicker();
+      try {
+        await Promise.all(OFFICES.map(o => fetchOfficeList(o).catch(() => null)));
+      } catch (e) {}
+      renderOfficePicker();
+      showAvatarToast('โหลดรายชื่อจาก eoffice ใหม่แล้ว');
+    }
+
     let allUsers = [];
     let stagePools = [[], [], [], [], []]; // Users in stages 1-5
     let currentTeams = [[], [], [], []];   // Teams 0, 1, 2, 3
@@ -747,8 +992,11 @@
     }
 
     function getPersonKey(u) {
-      if (u.seq) return 'seq_' + u.seq;
-      if (u.id !== undefined && u.id !== null) return 'id_' + u.id;
+      // seq ซ้ำกันได้ระหว่างกลุ่มหน่วยงาน (สป.กค. 1..509 / สร.กค. 1..51)
+      // ใส่ officeId นำหน้าเฉพาะหน่วยงานที่สอง เพื่อไม่ให้ key ชนกัน (คง key เดิมของ สป.กค. ไว้)
+      const off = (u.officeId !== undefined && u.officeId !== null) ? u.officeId + '_' : '';
+      if (u.seq) return 'seq_' + off + u.seq;
+      if (u.id !== undefined && u.id !== null) return 'id_' + off + u.id;
       return 'name_' + encodeURIComponent(u.name || '');
     }
 
@@ -963,8 +1211,27 @@
       });
     }
 
-    // จำแนกบุคคลลงใน 5 Stages
-    function classifyUsersIntoStages(rawList) {
+    // หน่วยงานภายนอก (กรมในสังกัดอื่น / หน้าห้อง) — ไม่แสดงเป็นกรอบสำนักในรอบที่ 5
+    const OUTSIDE_UNITS = new Set([
+      'กรมสรรพากร', 'กรมบัญชีกลาง', 'กรมสรรพสามิต', 'กรมศุลกากร', 'กรมธนารักษ์',
+      'สำนักงานบริหารหนี้สาธารณะ', 'สำนักงานคณะกรรมการนโยบายรัฐวิสาหกิจ', 'สำนักงานเศรษฐกิจการคลัง',
+    ]);
+    function isOutsideUnit(div) {
+      const d = (div || '').trim();
+      return OUTSIDE_UNITS.has(d) || /^หน้าห้อง/.test(d);
+    }
+
+    // กรณีพิเศษ: บังคับให้อยู่รอบที่ 4 (ผอ.ส่วน) แม้ตำแหน่งจริงจะไม่เข้าเงื่อนไข
+        const SPECIAL_ROUND4 = new Set([
+          'นางสาวชิดชนก จิรเศวตกุล',
+          'นายปริญญา ปรีดียานนท์',
+        ]);
+        function isSpecialRound4(name) {
+          return SPECIAL_ROUND4.has((name || '').replace(/\s+/g, ' ').trim());
+        }
+
+        // จำแนกบุคคลลงใน 5 Stages
+        function classifyUsersIntoStages(rawList) {
       stagePools = [[], [], [], [], []];
 
       rawList.forEach((u, idx) => {
@@ -986,12 +1253,17 @@
           subdiv: sub,
           gender: gender,
           active: u.active !== false,
+          age: lookupAge(u),
           assignedTeam: -1,
           assignedStage: -1
         };
 
         // Stage 1: รองปลัด เท่านั้น (4 ท่าน)
-        if (/รองปลัด/u.test(matchPos) && !/หัวหน้าผู้ตรวจ/u.test(matchPos)) {
+                if (isSpecialRound4(name)) {
+                  item.stageId = 4;
+                  stagePools[3].push(item);
+                }
+                else if (/รองปลัด/u.test(matchPos) && !/หัวหน้าผู้ตรวจ/u.test(matchPos)) {
           item.stageId = 1;
           stagePools[0].push(item);
         }
@@ -1011,7 +1283,10 @@
           item.stageId = 4;
           stagePools[3].push(item);
         }
-        // Stage 5: บุคลากรที่เหลือทั้งหมด
+        // Stage 5: บุคลากรที่เหลือทั้งหมด (ยกเว้นคนที่สังกัดหน่วยงานภายนอก)
+        else if (isOutsideUnit(div)) {
+          item.stageId = 0;
+        }
         else {
           item.stageId = 5;
           stagePools[4].push(item);
@@ -1043,6 +1318,16 @@
     // ==========================================
     // การสุ่มทีละ Stage (Stage Randomization)
     // ==========================================
+    // ปุ่มสุ่มหลัก: รอบ 1-4 สุ่มตามปกติ / รอบ 5 แค่เลื่อนลงไปกรอบแบ่งสีตามสำนัก-ส่วนงาน
+    function handleSpinButton() {
+      if (currentStageIndex === 4) {
+        const sec = document.getElementById('divisionSplitSection');
+        if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      spinCurrentStage();
+    }
+
     function spinCurrentStage() {
       if (currentStageIndex >= 5) {
         alert('สุ่มครบทั้ง 5 รอบเรียบร้อยแล้วครับ! หากต้องการสุ่มใหม่สามารถกดปุ่ม "เริ่มสุ่มใหม่" ได้เลยครับ');
@@ -1164,8 +1449,8 @@
       title.innerText = `ผลการสุ่มรอบที่ ${stageNum}: ${stagesInfo[stageNum - 1].title} (${assignedList.length} ท่าน)`;
       badge.innerText = `รอบที่ ${stageNum} สำเร็จแล้ว`;
 
-      // แสดงการ์ดไฮไลท์ (ถ้ามากกว่า 16 คน เช่นรอบ 5 ให้แสดงสรุปตัวอย่าง)
-      const displayItems = assignedList.slice(0, 16);
+      // แสดงการ์ดไฮไลท์ทุกคนในรอบนี้ (ไม่ตัดเหลือ 16 คน)
+      const displayItems = assignedList;
       list.innerHTML = displayItems.map(({ person, team }) => {
         const theme = teamTheme[team];
         return `
@@ -1182,14 +1467,6 @@
           </div>
         `;
       }).join('');
-
-      if (assignedList.length > 16) {
-        list.innerHTML += `
-          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-center text-xs text-slate-500 font-semibold col-span-full">
-            และบุคลากรอีก ${assignedList.length - 16} คน ถูกกระจายครบทุกสีอย่างสมดุลเรียบร้อยแล้ว
-          </div>
-        `;
-      }
     }
 
     // อัปเดต UI ของ Stepper 5 ขั้นตอน
@@ -1236,7 +1513,7 @@
       }
     }
 
-    // สุ่มทั้งหมดรวดเดียวครบ 5 รอบ
+    // สุ่มรวดเดียวรอบ 1-4 แล้วหยุดที่รอบ 5 (รอบ 5 ใช้กรอบแบ่งสีตามส่วนงาน)
     function autoRunAllStages() {
       if (currentStageIndex >= 5) {
         if (!confirm('สุ่มครบ 5 รอบแล้ว ต้องการเริ่มสุ่มใหม่ตั้งแต่รอบที่ 1 หรือไม่?')) return;
@@ -1244,10 +1521,12 @@
       }
 
       let interval = setInterval(() => {
-        if (currentStageIndex < 5) {
+        if (currentStageIndex < 4) {
           spinCurrentStage();
         } else {
           clearInterval(interval);
+          const sec = document.getElementById('divisionSplitSection');
+          if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 700);
     }
@@ -1267,11 +1546,1010 @@
     // ==========================================
     // Render Views (Columns, Table, Breakdown)
     // ==========================================
+    // ==========================================
+    // อายุ / ช่วงวัย (ข้อมูลจาก officials_ages.json)
+    // ==========================================
+    const GEN_META = {
+      boomer:  { label: 'Baby Boomer', short: 'BB', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
+      x:       { label: 'Gen X',       short: 'X',  cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+      y:       { label: 'Gen Y',       short: 'Y',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      z:       { label: 'Gen Z',       short: 'Z',  cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+      unknown: { label: 'ไม่ทราบอายุ',  short: '?',  cls: 'bg-slate-100 text-slate-500 border-slate-200' }
+    };
+    const GEN_ORDER = ['boomer', 'x', 'y', 'z', 'unknown'];
+
+    function normName(s) {
+      return String(s || '').normalize('NFC').replace(/\s+/g, '');
+    }
+
+    // จับคู่ชื่อกับ API: ใช้ seq ก่อน แล้วค่อยใช้ชื่อ-สกุล
+    function lookupAge(u) {
+      const map = window.AGE_MAP;
+      if (!map || !u) return null;
+      if (u.seq !== undefined && u.seq !== null && map.by_seq && map.by_seq[String(u.seq)] !== undefined) {
+        return map.by_seq[String(u.seq)];
+      }
+      const key = normName(u.per_name) + normName(u.per_surname);
+      if (key && map.by_name && map.by_name[key] !== undefined) return map.by_name[key];
+      return null;
+    }
+
+    // ช่วงวัยตามอายูปัจจุบัน: BB 61+ / X 42-60 / Y 23-41 / Z 19-22
+    function genOf(u) {
+      const age = (typeof u.age === 'number') ? u.age : lookupAge(u);
+      if (age === null || age === undefined || isNaN(age)) return 'unknown';
+      if (age >= 61) return 'boomer';
+      if (age >= 42) return 'x';
+      if (age >= 23) return 'y';
+      return 'z';
+    }
+
+    function ageChip(u) {
+      const age = (typeof u.age === 'number') ? u.age : lookupAge(u);
+      const g = GEN_META[genOf(u)];
+      const ageTxt = (age === null || age === undefined) ? 'ไม่ทราบอายุ' : age + ' ปี';
+      return `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border ${g.cls}">${g.short} · ${ageTxt}</span>`;
+    }
+
+    function genCounts(list) {
+      const c = { boomer: 0, x: 0, y: 0, z: 0, unknown: 0 };
+      list.forEach(u => { c[genOf(u)]++; });
+      return c;
+    }
+
+    // ==========================================
+    // รอบที่ 5: แบ่งสีตามกลุ่มงาน (กลุ่ม -> ส่วนงาน -> รายชื่อ -> สุ่ม)
+    // ==========================================
+    let divisionSplits = {};           // { division: { subdiv, teams: [[key,...]x4], at } }
+    const divisionUi = { division: null, subdiv: null, gens: new Set(GEN_ORDER), gender: 'all', split: null };
+
+    function loadDivisionSplits() {
+      try {
+        const raw = localStorage.getItem('sport_division_splits');
+        if (raw) divisionSplits = JSON.parse(raw) || {};
+      } catch (e) { divisionSplits = {}; }
+    }
+
+    function persistDivisionSplits() {
+      try { localStorage.setItem('sport_division_splits', JSON.stringify(divisionSplits)); } catch (e) {}
+    }
+
+    function divisionOf(u) {
+      return (u.division || '').trim() || 'ไม่ระบุกลุ่ม';
+    }
+
+    function subdivOf(u) {
+      return (u.subdiv || u.subdiv1 || '').trim() || 'ไม่ระบุส่วนงาน';
+    }
+
+    function divisionGroups(list) {
+      const map = new Map();
+      list.forEach(u => {
+        const d = divisionOf(u);
+        if (!map.has(d)) map.set(d, []);
+        map.get(d).push(u);
+      });
+      return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+    }
+
+    function assignedTeamOf(u) {
+      const key = getPersonKey(u);
+      for (let t = 0; t < 4; t++) {
+        if (currentTeams[t].some(x => getPersonKey(x) === key)) return t;
+      }
+      return -1;
+    }
+
+    // ---------- รอบที่ 5: กรอบสำนัก/ศูนย์/กลุ่ม + การ์ดส่วนงานแนวนอนขนาดใหญ่ ----------
+    const DIVISION_THEMES = [
+      {
+        border: 'border-indigo-200',
+        headerBg: 'bg-gradient-to-r from-indigo-50/80 via-blue-50/40 to-white',
+        iconBg: 'bg-indigo-600 text-white shadow-indigo-200',
+        titleColor: 'text-indigo-950',
+        badge: 'bg-indigo-100 text-indigo-700',
+        secBg: 'bg-indigo-50/30',
+        secIcon: 'bg-indigo-100 text-indigo-600',
+        btnWhole: 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200',
+        btnSec: 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25'
+      },
+      {
+        border: 'border-purple-200',
+        headerBg: 'bg-gradient-to-r from-purple-50/80 via-pink-50/40 to-white',
+        iconBg: 'bg-purple-600 text-white shadow-purple-200',
+        titleColor: 'text-purple-950',
+        badge: 'bg-purple-100 text-purple-700',
+        secBg: 'bg-purple-50/30',
+        secIcon: 'bg-purple-100 text-purple-600',
+        btnWhole: 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200',
+        btnSec: 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/25'
+      },
+      {
+        border: 'border-teal-200',
+        headerBg: 'bg-gradient-to-r from-teal-50/80 via-emerald-50/40 to-white',
+        iconBg: 'bg-teal-600 text-white shadow-teal-200',
+        titleColor: 'text-teal-950',
+        badge: 'bg-teal-100 text-teal-700',
+        secBg: 'bg-teal-50/30',
+        secIcon: 'bg-teal-100 text-teal-600',
+        btnWhole: 'bg-teal-50 hover:bg-teal-100 text-teal-700 border-teal-200',
+        btnSec: 'bg-teal-600 hover:bg-teal-700 shadow-teal-500/25'
+      },
+      {
+        border: 'border-sky-200',
+        headerBg: 'bg-gradient-to-r from-sky-50/80 via-cyan-50/40 to-white',
+        iconBg: 'bg-sky-600 text-white shadow-sky-200',
+        titleColor: 'text-sky-950',
+        badge: 'bg-sky-100 text-sky-700',
+        secBg: 'bg-sky-50/30',
+        secIcon: 'bg-sky-100 text-sky-600',
+        btnWhole: 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200',
+        btnSec: 'bg-sky-600 hover:bg-sky-700 shadow-sky-500/25'
+      },
+      {
+        border: 'border-amber-200',
+        headerBg: 'bg-gradient-to-r from-amber-50/80 via-orange-50/40 to-white',
+        iconBg: 'bg-amber-600 text-white shadow-amber-200',
+        titleColor: 'text-amber-950',
+        badge: 'bg-amber-100 text-amber-700',
+        secBg: 'bg-amber-50/30',
+        secIcon: 'bg-amber-100 text-amber-600',
+        btnWhole: 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200',
+        btnSec: 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/25'
+      },
+      {
+        border: 'border-rose-200',
+        headerBg: 'bg-gradient-to-r from-rose-50/80 via-red-50/40 to-white',
+        iconBg: 'bg-rose-600 text-white shadow-rose-200',
+        titleColor: 'text-rose-950',
+        badge: 'bg-rose-100 text-rose-700',
+        secBg: 'bg-rose-50/30',
+        secIcon: 'bg-rose-100 text-rose-600',
+        btnWhole: 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200',
+        btnSec: 'bg-rose-600 hover:bg-rose-700 shadow-rose-500/25'
+      },
+      {
+        border: 'border-emerald-200',
+        headerBg: 'bg-gradient-to-r from-emerald-50/80 via-teal-50/40 to-white',
+        iconBg: 'bg-emerald-600 text-white shadow-emerald-200',
+        titleColor: 'text-emerald-950',
+        badge: 'bg-emerald-100 text-emerald-700',
+        secBg: 'bg-emerald-50/30',
+        secIcon: 'bg-emerald-100 text-emerald-600',
+        btnWhole: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200',
+        btnSec: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25'
+      },
+      {
+        border: 'border-blue-200',
+        headerBg: 'bg-gradient-to-r from-blue-50/80 via-indigo-50/40 to-white',
+        iconBg: 'bg-blue-600 text-white shadow-blue-200',
+        titleColor: 'text-blue-950',
+        badge: 'bg-blue-100 text-blue-700',
+        secBg: 'bg-blue-50/30',
+        secIcon: 'bg-blue-100 text-blue-600',
+        btnWhole: 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200',
+        btnSec: 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25'
+      },
+      {
+        border: 'border-violet-200',
+        headerBg: 'bg-gradient-to-r from-violet-50/80 via-purple-50/40 to-white',
+        iconBg: 'bg-violet-600 text-white shadow-violet-200',
+        titleColor: 'text-violet-950',
+        badge: 'bg-violet-100 text-violet-700',
+        secBg: 'bg-violet-50/30',
+        secIcon: 'bg-violet-100 text-violet-600',
+        btnWhole: 'bg-violet-50 hover:bg-violet-100 text-violet-700 border-violet-200',
+        btnSec: 'bg-violet-600 hover:bg-violet-700 shadow-violet-500/25'
+      },
+      {
+        border: 'border-cyan-200',
+        headerBg: 'bg-gradient-to-r from-cyan-50/80 via-sky-50/40 to-white',
+        iconBg: 'bg-cyan-600 text-white shadow-cyan-200',
+        titleColor: 'text-cyan-950',
+        badge: 'bg-cyan-100 text-cyan-700',
+        secBg: 'bg-cyan-50/30',
+        secIcon: 'bg-cyan-100 text-cyan-600',
+        btnWhole: 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-200',
+        btnSec: 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-500/25'
+      }
+    ];
+
+    function getDivisionTheme(i) {
+      const n = DIVISION_THEMES.length;
+      return DIVISION_THEMES[((i % n) + n) % n];
+    }
+
+    function q(s) {
+      return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function isLeaderPosition(u) {
+      return /ผู้อำนวยการ/.test(u.position || '');
+    }
+
+    function subdivGroupsOf(list) {
+      const map = new Map();
+      list.forEach(u => {
+        const s = subdivOf(u);
+        if (!map.has(s)) map.set(s, []);
+        map.get(s).push(u);
+      });
+      return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+    }
+
+    function assignedCount(list) {
+      return list.filter(u => assignedTeamOf(u) >= 0).length;
+    }
+
+    function setChip(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = text;
+    }
+
+    function divisionPeopleOf(name) {
+      return (stagePools[4] || []).filter(u => divisionOf(u) === name);
+    }
+
+    // ปุ่ม "ดูผล" โผล่เฉพาะเมื่อคนกลุ่มนั้นถูกจัดเข้าสีแล้วจริง ๆ
+    function divisionHasResult(name) {
+      return divisionPeopleOf(name).some(u => assignedTeamOf(u) >= 0);
+    }
+
+    function subdivHasResult(name, sub) {
+      return subdivPeopleOf(name, sub).some(u => assignedTeamOf(u) >= 0);
+    }
+
+    function subdivPeopleOf(name, sub) {
+      return divisionPeopleOf(name).filter(u => subdivOf(u) === sub);
+    }
+
+    function renderDivisionCards() {
+      const host = document.getElementById('divisionCards');
+      if (!host) return;
+      const pool = stagePools[4] || [];
+      const groups = divisionGroups(pool);
+
+      setChip('divisionSplitCount', `${groups.length} กลุ่ม · ${pool.length} คน`);
+      setChip('divisionSplitProgress', `สุ่มแล้ว ${assignedCount(pool)}/${pool.length} คน`);
+      setChip('ageCoverageChip', `มีอายุ ${pool.filter(u => typeof u.age === 'number').length}/${pool.length}`);
+
+      if (groups.length === 0) {
+        host.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">
+          <i class="fa-solid fa-users-slash text-2xl text-slate-300 mb-2 block"></i>
+          ยังไม่มีบุคลากรในรอบที่ 5
+        </div>`;
+        return;
+      }
+
+      host.innerHTML = groups.map(([name, list], idx) => {
+        const theme = getDivisionTheme(idx);
+        const subs = subdivGroupsOf(list);
+        const done = assignedCount(list);
+        const allDone = list.length > 0 && done === list.length;
+        const g = genCounts(list);
+        const genChips = GEN_ORDER.filter(k => g[k] > 0).map(k =>
+          `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].short} ${g[k]}</span>`).join('');
+
+        const subCards = subs.map(([subName, people]) => {
+          const subDone = assignedCount(people);
+          const subAll = people.length > 0 && subDone === people.length;
+          const sg = genCounts(people);
+          const subChips = GEN_ORDER.filter(k => sg[k] > 0).map(k =>
+            `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].short} ${sg[k]}</span>`).join('');
+          const sorted = people.slice().sort((a, b) =>
+            (genOf(a) || '').localeCompare(genOf(b) || '') || ((a.age || 0) - (b.age || 0)));
+          return `
+            <div class="bg-white rounded-2xl border ${subAll ? 'border-emerald-200 ring-1 ring-emerald-100' : theme.border} p-3.5 sm:p-4 shadow-2xs transition hover:shadow-xs">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-9 h-9 rounded-xl ${subAll ? 'bg-emerald-600 text-white' : theme.secIcon} flex items-center justify-center text-sm shrink-0 shadow-2xs">
+                    <i class="fa-solid ${subAll ? 'fa-check' : 'fa-people-group'}"></i>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs sm:text-sm text-slate-900 truncate" title="${subName}">${subName}</div>
+                    <div class="text-[10.5px] text-slate-500 mt-0.5">${people.length} คน · สุ่มแล้ว ${subDone}/${people.length} คน · มีอายุ ${people.filter(u => typeof u.age === 'number').length}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                  <div class="hidden md:flex flex-wrap gap-1 mr-1">${subChips}</div>
+                  ${subdivHasResult(name, subName) ? `<button type="button" onclick="openSplitResultFor('${q(name)}','${q(subName)}')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-bold hover:bg-emerald-100 transition active:scale-95">
+                    <i class="fa-solid fa-chart-simple"></i> ดูผล 4 สี
+                  </button>` : ''}
+                  <button type="button" onclick="openDivisionModalAt('${q(name)}','${q(subName)}')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border ${theme.border} ${theme.btnWhole} text-[11px] font-bold transition active:scale-95">
+                    <i class="fa-solid fa-list-ul"></i> ดูรายชื่อ
+                  </button>
+                  <button type="button" onclick="splitSubdivNow('${q(name)}','${q(subName)}')" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl ${theme.btnSec} text-white text-[11px] font-bold shadow-md transition active:scale-95">
+                    <i class="fa-solid fa-dice"></i> สุ่มส่วนนี้
+                  </button>
+                </div>
+              </div>
+              <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2">
+                ${sorted.map(u => personCardHtml(u)).join('')}
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="bg-white rounded-3xl border-2 ${allDone ? 'border-emerald-300' : theme.border} shadow-sm overflow-hidden transition-all">
+            <div class="p-4 sm:p-5 ${theme.headerBg} border-b ${theme.border} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-10 h-10 rounded-2xl ${allDone ? 'bg-emerald-600 text-white' : theme.iconBg} flex items-center justify-center font-bold text-sm shrink-0 shadow-md">
+                  ${String(idx + 1).padStart(2, '0')}
+                </span>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-sm sm:text-base ${theme.titleColor} truncate" title="${name}">${name}</h3>
+                  <div class="text-[11px] text-slate-600 mt-0.5">(${list.length} คน • ${subs.length} ส่วนงาน) · สุ่มแล้ว ${done}/${list.length} คน</div>
+                </div>
+              </div>
+              <div class="shrink-0 flex items-center gap-2">
+                ${divisionHasResult(name) ? `<button type="button" onclick="openDivisionResult('${q(name)}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-[11px] hover:bg-emerald-100 transition active:scale-95">
+                  <i class="fa-solid fa-chart-simple"></i> ดูผลรวม
+                </button>` : ''}
+                <button type="button" onclick="splitDivisionNow('${q(name)}')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl ${theme.btnWhole} border font-bold text-[11px] transition active:scale-95">
+                  <i class="fa-solid fa-shuffle"></i> สุ่มทุกส่วนในสำนักนี้
+                </button>
+              </div>
+            </div>
+            <div class="p-4 sm:p-5 space-y-3 ${theme.secBg}">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <p class="text-[11px] text-slate-500">ภายในสำนักนี้แบ่งออกเป็น ${subs.length} ส่วนงานย่อย สามารถกดสุ่มเฉพาะส่วนได้จากกรอบด้านล่าง</p>
+                <div class="flex flex-wrap gap-1">${genChips}</div>
+              </div>
+              ${subCards}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function personCardHtml(u) {
+      const t = assignedTeamOf(u);
+      const tt = t >= 0 ? teamTheme[t] : null;
+      const leader = isLeaderPosition(u);
+      return `<div class="flex items-center gap-2.5 p-2 rounded-xl border ${tt ? tt.border : 'border-slate-200/90'} ${leader ? 'bg-purple-50/70 ring-1 ring-purple-200' : 'bg-white'} shadow-2xs">
+        ${renderAvatarHtml(u, 'w-9 h-9', 'text-sm')}
+        <div class="min-w-0 flex-1">
+          <div class="text-[11px] font-bold text-slate-900 truncate flex items-center gap-1" title="${u.name}">
+            <span class="truncate">${u.name}</span>
+            ${leader ? '<span class="shrink-0 text-[8.5px] font-bold px-1 py-0.5 rounded bg-purple-600 text-white">ผอ.ส่วน</span>' : ''}
+          </div>
+          <div class="text-[10px] text-slate-500 truncate" title="${u.position || ''}">${u.position || '-'}${typeof u.age === 'number' ? ' · ' + u.age + ' ปี' : ''}</div>
+          <div class="mt-0.5">${tt
+            ? `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded ${tt.badge}"><span class="w-1.5 h-1.5 rounded-full ${tt.bar}"></span>${tt.name}</span>`
+            : '<span class="text-[9px] text-slate-400">รอสุ่ม</span>'}</div>
+        </div>
+      </div>`;
+    }
+
+    function openDivisionModal(name) {
+      divisionUi.division = name;
+      divisionUi.subdiv = null;
+      divisionUi.gens = new Set(GEN_ORDER);
+      divisionUi.gender = 'all';
+      divisionUi.split = null;
+      const modal = document.getElementById('divisionModal');
+      if (modal) modal.classList.remove('hidden');
+      renderDivisionModal();
+    }
+
+    function closeDivisionModal() {
+      const modal = document.getElementById('divisionModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function divisionPeople() {
+      return (stagePools[4] || []).filter(u => divisionOf(u) === divisionUi.division);
+    }
+
+    function divisionSubdivs() {
+      const map = new Map();
+      divisionPeople().forEach(u => {
+        const s = subdivOf(u);
+        if (!map.has(s)) map.set(s, []);
+        map.get(s).push(u);
+      });
+      return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+    }
+
+    function selectDivisionSubdiv(name) {
+      divisionUi.subdiv = name;
+      divisionUi.split = null;
+      renderDivisionModal();
+    }
+
+    function toggleGenFilter(k) {
+      if (divisionUi.gens.has(k)) divisionUi.gens.delete(k); else divisionUi.gens.add(k);
+      divisionUi.split = null;
+      renderDivisionModal();
+    }
+
+    function setGenderFilter(g) {
+      divisionUi.gender = g;
+      divisionUi.split = null;
+      renderDivisionModal();
+    }
+
+    function filteredDivisionPeople() {
+      let list = divisionPeople();
+      if (divisionUi.subdiv) list = list.filter(u => subdivOf(u) === divisionUi.subdiv);
+      if (divisionUi.gens.size < GEN_ORDER.length) list = list.filter(u => divisionUi.gens.has(genOf(u)));
+      if (divisionUi.gender !== 'all') list = list.filter(u => u.gender === divisionUi.gender);
+      return list;
+    }
+
+    function renderDivisionModal() {
+      const title = document.getElementById('divisionModalTitle');
+      const sub = document.getElementById('divisionModalSub');
+      const crumb = document.getElementById('divisionModalCrumb');
+      const body = document.getElementById('divisionModalBody');
+      const footer = document.getElementById('divisionModalFooter');
+      if (!body) return;
+
+      const people = divisionPeople();
+      if (title) title.innerText = divisionUi.division || 'กลุ่มงาน';
+      if (crumb) crumb.innerText = divisionUi.subdiv ? `กลุ่ม › ${divisionUi.subdiv}` : 'กลุ่ม › เลือกส่วนงาน';
+      if (sub) sub.innerText = `${people.length} คน · แสดง ${filteredDivisionPeople().length} คนตามเงื่อนไข`;
+
+      // filter chips
+      const gc = document.getElementById('genFilterChips');
+      if (gc) {
+        const counts = genCounts(people);
+        gc.innerHTML = GEN_ORDER.filter(k => counts[k] > 0 || k === 'unknown').map(k => {
+          const on = divisionUi.gens.has(k);
+          return `<button type="button" onclick="toggleGenFilter('${k}')"
+            class="text-[10px] font-semibold px-2 py-1 rounded-lg border transition ${on ? GEN_META[k].cls : 'bg-white text-slate-400 border-slate-200 opacity-70'}">
+            ${GEN_META[k].label} (${counts[k]})</button>`;
+        }).join('');
+      }
+      const gdc = document.getElementById('genderFilterChips');
+      if (gdc) {
+        const opts = [['all', 'ทั้งหมด', 'bg-slate-100 text-slate-700 border-slate-200'],
+                      ['ชาย', 'ชาย', 'bg-blue-50 text-blue-700 border-blue-200'],
+                      ['หญิง', 'หญิง', 'bg-rose-50 text-rose-700 border-rose-200']];
+        gdc.innerHTML = opts.map(([v, label, cls]) => {
+          const on = divisionUi.gender === v;
+          return `<button type="button" onclick="setGenderFilter('${v}')"
+            class="text-[10px] font-semibold px-2 py-1 rounded-lg border transition ${on ? cls + ' ring-1 ring-inset ring-slate-300' : 'bg-white text-slate-400 border-slate-200 opacity-70'}">${label}</button>`;
+        }).join('');
+      }
+
+      if (!divisionUi.split && !divisionUi.subdiv) {
+        // ชั้นที่ 1: เลือกส่วนงาน
+        const subs = divisionSubdivs();
+        body.innerHTML = `
+          <div class="text-[11px] font-semibold text-slate-500 mb-2">เลือกส่วนงาน (${subs.length})</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${subs.map(([name, list]) => {
+              const g = genCounts(list);
+              const chips = GEN_ORDER.filter(k => g[k] > 0).map(k =>
+                `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].short} ${g[k]}</span>`).join('');
+              return `<button type="button" onclick="selectDivisionSubdiv('${name.replace(/'/g, "\\'")}')"
+                class="text-left bg-white rounded-xl border border-slate-200 hover:border-royal-300 hover:shadow-sm p-3 transition">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-bold text-xs text-slate-800 truncate" title="${name}">${name}</span>
+                  <span class="text-[11px] font-bold text-slate-600">${list.length}</span>
+                </div>
+                <div class="mt-1.5 flex flex-wrap gap-1">${chips || '<span class="text-[10px] text-slate-400">ไม่มีข้อมูลอายุ</span>'}</div>
+              </button>`;
+            }).join('')}
+          </div>`;
+        if (footer) footer.classList.add('hidden');
+        return;
+      }
+
+      if (divisionUi.split) { renderDivisionSplitResult(); return; }
+
+      // ชั้นที่ 2: รายชื่อในส่วนงาน
+      const list = filteredDivisionPeople()
+        .slice()
+        .sort((a, b) => (genOf(a) || '').localeCompare(genOf(b) || '') || (a.age || 0) - (b.age || 0));
+      body.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <button type="button" onclick="selectDivisionSubdiv(null)" class="text-[11px] font-semibold text-royal-700 hover:underline">
+            <i class="fa-solid fa-chevron-left mr-1"></i> กลับไปเลือกส่วนงาน
+          </button>
+          <span class="text-[11px] text-slate-500">${list.length} คน</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          ${list.length === 0 ? '<div class="col-span-full text-center py-8 text-slate-400 text-xs">ไม่มีคนตรงเงื่อนไขที่เลือก</div>' : list.map(u => {
+            const t = assignedTeamOf(u);
+            const theme = t >= 0 ? teamTheme[t] : null;
+            return `<div class="bg-white rounded-xl border border-slate-200 p-2.5 flex items-start gap-2.5">
+              ${renderAvatarHtml(u, 'w-9 h-9', 'text-sm')}
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-[11px] text-slate-900 truncate" title="${u.name}">${u.name}</span>
+                  ${theme ? `<span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${theme.badge}">${theme.name}</span>` : ''}
+                </div>
+                <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${u.position}">${u.position || '-'}</div>
+                <div class="mt-1 flex items-center gap-1 flex-wrap">${ageChip(u)}
+                  <span class="text-[10px] px-1.5 py-0.5 rounded ${u.gender === 'ชาย' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">${u.gender || '-'}</span>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      if (footer) footer.classList.add('hidden');
+    }
+
+    // แบ่งให้สมดุล: กระจายทีละ (ช่วงวัย + เพศ) ลงสีที่ยังมีกลุ่มนั้นน้อยที่สุด
+    // แล้ว tie-break ด้วยอายุเฉลี่ยของสีนั้น เพื่อเกลี่ยอายุให้ใกล้กันทุกสี
+    function splitBalanced(list) {
+      const teams = [[], [], [], []];
+      const buckets = [{}, {}, {}, {}];
+      const ageOf = u => (typeof u.age === 'number' ? u.age : lookupAge(u));
+      const ageSum = [0, 0, 0, 0];
+      const ageN = [0, 0, 0, 0];
+      const groups = new Map();
+      list.forEach(u => {
+        const k = genOf(u) + '|' + (u.gender || 'ไม่ระบุ');
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(u);
+      });
+      const keys = [...groups.keys()].sort((a, b) => groups.get(a).length - groups.get(b).length);
+      keys.forEach(k => {
+        const arr = shuffleArray([...groups.get(k)]);
+        // oldest first → drop onto the colour with the lowest average age
+        arr.sort((a, b) => (ageOf(b) ?? 0) - (ageOf(a) ?? 0));
+        arr.forEach(u => {
+          let best = 0, bestScore = Infinity;
+          for (let t = 0; t < 4; t++) {
+            const mean = ageN[t] ? ageSum[t] / ageN[t] : 0;
+            // ลำดับความสำคัญ: จำนวนคนต่อสี (สำคัญสุด) → จำนวนคนของช่วงวัย+เพศนั้น → อายุเฉลี่ย
+            const score = teams[t].length * 1e9 + (buckets[t][k] || 0) * 1e4 + mean;
+            if (score < bestScore) { bestScore = score; best = t; }
+          }
+          teams[best].push(u);
+          buckets[best][k] = (buckets[best][k] || 0) + 1;
+          const a = ageOf(u);
+          if (typeof a === 'number') { ageSum[best] += a; ageN[best]++; }
+        });
+      });
+
+      // ปรับอายุให้ใกล้กันอีกชั้น: สลับคน "ช่วงวัย+เพศเดียวกัน" ระหว่างสีที่อายุมากสุด/น้อยสุด
+      // (จำนวนคนต่อสีและสัดส่วนช่วงวัยไม่เปลี่ยน)
+      const ageInfo = () => teams.map(t => {
+        const a = t.map(ageOf).filter(x => typeof x === 'number');
+        const sum = a.reduce((s, x) => s + x, 0);
+        return { sum, n: a.length, mean: a.length ? sum / a.length : null };
+      });
+      for (let iter = 0; iter < 200; iter++) {
+        const info = ageInfo();
+        let hi = -1, lo = -1;
+        info.forEach((x, i) => {
+          if (x.mean === null) return;
+          if (hi < 0 || x.mean > info[hi].mean) hi = i;
+          if (lo < 0 || x.mean < info[lo].mean) lo = i;
+        });
+        if (hi < 0 || lo < 0 || hi === lo) break;
+        if (info[hi].mean - info[lo].mean < 0.4) break;
+
+        let swap = null;
+        for (let a = 0; a < teams[hi].length && !swap; a++) {
+          const ua = teams[hi][a], aa = ageOf(ua);
+          if (typeof aa !== 'number') continue;
+          for (let b = 0; b < teams[lo].length; b++) {
+            const ub = teams[lo][b], ab = ageOf(ub);
+            if (typeof ab !== 'number' || aa <= ab) continue;
+            if (genOf(ua) !== genOf(ub) || (ua.gender || '-') !== (ub.gender || '-')) continue;
+            const nHi = (info[hi].sum - aa + ab) / info[hi].n;
+            const nLo = (info[lo].sum - ab + aa) / info[lo].n;
+            if ((info[hi].mean - nHi) + (nLo - info[lo].mean) > 0.2) { swap = [a, b]; break; }
+          }
+        }
+        if (!swap) break;
+        const [a, b] = swap;
+        const ua = teams[hi][a];
+        teams[hi][a] = teams[lo][b];
+        teams[lo][b] = ua;
+      }
+
+      return teams;
+    }
+
+    function runDivisionSplit() {
+      const list = filteredDivisionPeople();
+      if (list.length === 0) {
+        showAvatarToast('ไม่มีคนตรงเงื่อนไขที่เลือก');
+        return;
+      }
+      playBeep(659.25, 'triangle', 0.12);
+      divisionUi.split = splitBalanced(list);
+      renderDivisionModal();
+    }
+
+    function renderDivisionSplitResult() {
+      const body = document.getElementById('divisionModalBody');
+      const footer = document.getElementById('divisionModalFooter');
+      const teams = divisionUi.split || [];
+      const total = teams.reduce((s, t) => s + t.length, 0);
+      body.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <button type="button" onclick="divisionUi.split=null; renderDivisionModal();" class="text-[11px] font-semibold text-royal-700 hover:underline">
+            <i class="fa-solid fa-chevron-left mr-1"></i> กลับไปดูรายชื่อ
+          </button>
+          <span class="text-[11px] text-slate-500">แบ่ง ${total} คน · ${divisionUi.subdiv || divisionUi.division}</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+          ${teams.map((list, t) => {
+            const theme = teamTheme[t];
+            const g = genCounts(list);
+            const male = list.filter(u => u.gender === 'ชาย').length;
+            const female = list.filter(u => u.gender === 'หญิง').length;
+            const chips = GEN_ORDER.filter(k => g[k] > 0).map(k =>
+              `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].short} ${g[k]}</span>`).join('');
+            return `<div class="bg-white rounded-xl border ${theme.border} overflow-hidden">
+              <div class="${theme.bg} px-3 py-2 border-b ${theme.border} flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full ${theme.bar}"></span>
+                  <span class="font-bold text-xs text-slate-900">${theme.name}</span>
+                </div>
+                <span class="text-[11px] font-bold ${theme.badge} px-2 py-0.5 rounded-full">${list.length}</span>
+              </div>
+              <div class="px-3 py-1.5 border-b border-slate-100 flex flex-wrap gap-1">${chips || '<span class="text-[10px] text-slate-400">-</span>'}</div>
+              <div class="px-3 py-1 text-[10px] text-slate-500 border-b border-slate-100">${male} ชาย · ${female} หญิง</div>
+              <div class="p-2 space-y-1.5 max-h-72 overflow-y-auto custom-scroll">
+                ${list.length === 0 ? '<div class="text-[10px] text-slate-400 text-center py-3">ว่าง</div>' : list.map(u => `
+                  <div class="flex items-center gap-2 py-0.5">
+                    ${renderAvatarHtml(u, 'w-8 h-8', 'text-[11px]')}
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[11px] font-semibold text-slate-800 truncate leading-tight" title="${u.name}">${u.name}</div>
+                      <div class="mt-0.5 flex items-center gap-1 flex-wrap">
+                        ${ageChip(u)}
+                        <span class="text-[9px] px-1 py-0.5 rounded ${u.gender === 'ชาย' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">${u.gender || '-'}</span>
+                      </div>
+                    </div>
+                  </div>`).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      if (footer) {
+        footer.classList.remove('hidden');
+        const sum = document.getElementById('divisionSplitSummary');
+        if (sum) sum.innerText = `ผลนี้ยังไม่ถูกใช้ · ${divisionUi.subdiv || divisionUi.division} · ${total} คน`;
+      }
+    }
+
+    // เขียนผลลง currentTeams (ใช้ร่วมกันทั้ง modal และปุ่มสุ่มเร็ว)
+    function applyTeamsFlat(teams) {
+      teams.forEach((list, t) => {
+        list.forEach(u => {
+          const key = getPersonKey(u);
+          for (let x = 0; x < 4; x++) currentTeams[x] = currentTeams[x].filter(p => getPersonKey(p) !== key);
+          u.assignedTeam = t;
+          if (!u.assignedStage || u.assignedStage < 0) u.assignedStage = 5;
+          currentTeams[t].push(u);
+        });
+      });
+    }
+
+    // เก็บผลแยกตามส่วนงานย่อย: divisionSplits[div] = { subdivs: { [sub]: { teams, at } }, at }
+    function recordSplit(div, sub, teams) {
+      const rec = divisionSplits[div] || (divisionSplits[div] = { subdivs: {}, at: 0 });
+      if (!rec.subdivs) {
+        rec.subdivs = {};
+        if (rec.subdiv && rec.teams) rec.subdivs[rec.subdiv] = { teams: rec.teams, at: rec.at || Date.now() };
+      }
+      rec.subdivs[sub || 'ไม่ระบุส่วนงาน'] = { teams: teams.map(t => t.map(u => getPersonKey(u))), at: Date.now() };
+      rec.at = Date.now();
+      persistDivisionSplits();
+    }
+
+    function subdivSplitOf(div, sub) {
+      const rec = divisionSplits[div];
+      if (!rec) return null;
+      if (rec.subdivs && rec.subdivs[sub]) return rec.subdivs[sub];
+      if (rec.subdiv === sub) return rec;
+      return null;
+    }
+
+    // แจกผลของแต่ละส่วนงานลง "สีที่ยังมียอดน้อยที่สุด" → ยอดรวม 4 สีต่างกันไม่เกิน 1
+    function distributeBalanced(subTeamsList, merged, sizes) {
+      subTeamsList.forEach(teams => {
+        const order = teams.map((t, i) => i).sort((a, b) => teams[b].length - teams[a].length);
+        const map = [];
+        order.forEach(i => {
+          let best = 0;
+          for (let c = 1; c < 4; c++) if (sizes[c] < sizes[best]) best = c;
+          map[i] = best;
+          sizes[best] += teams[i].length;
+        });
+        teams.forEach((t, i) => merged[map[i]].push(...t));
+      });
+    }
+
+    function baseTeamSizes() {
+      const poolKeys = new Set((stagePools[4] || []).map(getPersonKey));
+      return currentTeams.map(t => t.filter(u => !poolKeys.has(getPersonKey(u))).length);
+    }
+
+    // ปรับยอดให้ต่างกันไม่เกิน 1 คน โดยย้ายคนจากสีที่มากสุดไปสีที่น้อยสุด
+    // (เลือกคนจากส่วนงานที่ "เกิน" ในสีนั้นมากที่สุด เพื่อให้ยอดของแต่ละส่วนงานยังเกลี่ยกัน)
+    function evenOutTeams(teams) {
+      const countSub = (team, sub) => team.reduce((n, u) => n + (subdivOf(u) === sub ? 1 : 0), 0);
+      for (let guard = 0; guard < 2000; guard++) {
+        let hi = 0, lo = 0;
+        teams.forEach((t, i) => {
+          if (t.length > teams[hi].length) hi = i;
+          if (t.length < teams[lo].length) lo = i;
+        });
+        if (teams[hi].length - teams[lo].length <= 1) break;
+        let pick = -1, bestScore = -Infinity;
+        teams[hi].forEach((u, idx) => {
+          const sub = subdivOf(u);
+          const score = countSub(teams[hi], sub) - countSub(teams[lo], sub);
+          if (score > bestScore) { bestScore = score; pick = idx; }
+        });
+        if (pick < 0) break;
+        const [u] = teams[hi].splice(pick, 1);
+        teams[lo].push(u);
+      }
+      return teams;
+    }
+
+    // บันทึกผลแยกส่วนงานย่อยจากทีมที่กระจายเสร็จแล้ว
+    function recordFromTeams(div, teams) {
+      subdivGroupsOf(divisionPeopleOf(div)).forEach(([sub]) => {
+        recordSplit(div, sub, teams.map(t => t.filter(u => subdivOf(u) === sub)));
+      });
+    }
+
+    // แบ่งทุกส่วนงานย่อยของสำนัก โดยเกลี่ยช่วงวัย + เพศในแต่ละส่วนให้สมดุล 4 สี
+    function splitDivisionPool(div, merged, sizes) {
+      const list = divisionPeopleOf(div);
+      const subs = subdivGroupsOf(list);
+      const per = subs.map(([sub, arr]) => splitBalanced(arr));
+      distributeBalanced(per, merged || [[], [], [], []], sizes || baseTeamSizes());
+      return { parts: subs.length, total: list.length };
+    }
+
+    // ---------- แสดงผล 4 สี (คนในแต่ละสี + สถิติอายุ/ช่วงวัย/เพศ) ----------
+    let lastSplitResult = null;
+
+    function splitStats(teams) {
+      return teams.map(list => {
+        const ages = list.map(u => (typeof u.age === 'number' ? u.age : lookupAge(u))).filter(a => typeof a === 'number');
+        return {
+          n: list.length,
+          male: list.filter(u => u.gender === 'ชาย').length,
+          female: list.filter(u => u.gender === 'หญิง').length,
+          known: ages.length,
+          avgAge: ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : null,
+          min: ages.length ? Math.min(...ages) : null,
+          max: ages.length ? Math.max(...ages) : null,
+          g: genCounts(list)
+        };
+      });
+    }
+
+    function colourColumnHtml(list, t) {
+      const theme = teamTheme[t];
+      const st = splitStats([list])[0];
+      const genChips = GEN_ORDER.filter(k => st.g[k] > 0).map(k =>
+        `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].label} ${st.g[k]}</span>`).join('');
+      const rows = list.slice().sort((a, b) =>
+        GEN_ORDER.indexOf(genOf(a)) - GEN_ORDER.indexOf(genOf(b)) || (a.age || 0) - (b.age || 0));
+      return `<div class="bg-white rounded-2xl border ${theme.border} overflow-hidden flex flex-col">
+        <div class="${theme.bg} px-3 py-2 border-b ${theme.border}">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full ${theme.bar}"></span>
+              <span class="font-bold text-xs text-slate-900 truncate">${theme.name}</span>
+            </div>
+            <span class="text-[11px] font-bold ${theme.badge} px-2 py-0.5 rounded-full">${st.n} คน</span>
+          </div>
+          <div class="mt-1 flex items-center gap-2 text-[10px] text-slate-600 flex-wrap">
+            <span>ชาย ${st.male} · หญิง ${st.female}</span>
+            <span class="text-slate-400">|</span>
+            <span class="font-semibold">${st.avgAge === null ? 'อายุเฉลี่ย n/a' : 'อายุเฉลี่ย ' + st.avgAge.toFixed(1) + ' ปี'}</span>
+            ${st.known && st.known < st.n ? `<span class="text-amber-600">(${st.known}/${st.n} มีอายุ)</span>` : ''}
+            ${st.min !== null ? `<span class="text-slate-400">ช่วง ${st.min}–${st.max}</span>` : ''}
+          </div>
+        </div>
+        <div class="px-3 py-1.5 border-b border-slate-100 flex flex-wrap gap-1">${genChips || '<span class="text-[10px] text-slate-400">ไม่มีข้อมูลช่วงวัย</span>'}</div>
+        <div class="p-2 space-y-1.5 max-h-[46vh] overflow-y-auto custom-scroll">
+          ${list.length === 0 ? '<div class="text-[10px] text-slate-400 text-center py-3">ว่าง</div>' : rows.map(u => `
+            <div class="flex items-center gap-2 py-0.5">
+              ${renderAvatarHtml(u, 'w-8 h-8', 'text-[11px]')}
+              <div class="flex-1 min-w-0">
+                <div class="text-[11px] font-semibold text-slate-800 truncate leading-tight" title="${u.name}">${u.name}</div>
+                <div class="text-[9.5px] text-slate-500 truncate">${u.position || '-'}</div>
+                <div class="mt-0.5 flex items-center gap-1 flex-wrap">
+                  ${ageChip(u)}
+                  <span class="text-[9px] px-1 py-0.5 rounded ${u.gender === 'ชาย' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">${u.gender || '-'}</span>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    function showSplitResult(title, sub, teams) {
+      lastSplitResult = { title, sub, teams };
+      const modal = document.getElementById('splitResultModal');
+      const body = document.getElementById('splitResultBody');
+      if (!modal || !body) return;
+      const stats = splitStats(teams);
+      const total = teams.reduce((s, t) => s + t.length, 0);
+      const avg = stats.filter(s => s.avgAge !== null);
+      const avgAll = avg.length ? avg.reduce((s, x) => s + x.avgAge, 0) / avg.length : null;
+      const spread = avg.length > 1 ? Math.max(...avg.map(s => s.avgAge)) - Math.min(...avg.map(s => s.avgAge)) : 0;
+
+      const lbl = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+      lbl('splitResultTitle', title || 'ผลการสุ่ม');
+      lbl('splitResultSub', `${sub ? sub + ' · ' : ''}${total} คน · แบ่งเป็น 4 สี`);
+      lbl('splitResultTotal', `${total} คน · 4 สี${avgAll !== null ? ' · ต่างกัน ' + spread.toFixed(1) + ' ปี' : ''}`);
+
+      body.innerHTML = `
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          ${stats.map((st, t) => `<div class="bg-white rounded-xl border ${teamTheme[t].border} p-2.5">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full ${teamTheme[t].bar}"></span>
+              <span class="text-[11px] font-bold text-slate-800 truncate">${teamTheme[t].name}</span>
+            </div>
+            <div class="mt-1 text-lg font-bold text-slate-900 leading-none">${st.n}<span class="text-[10px] font-medium text-slate-500 ml-1">คน</span></div>
+            <div class="mt-1 text-[10px] text-slate-500">ชาย ${st.male} · หญิง ${st.female}</div>
+            <div class="text-[10px] font-semibold text-slate-700">${st.avgAge === null ? 'อายุเฉลี่ย n/a' : 'อายุเฉลี่ย ' + st.avgAge.toFixed(1) + ' ปี'}</div>
+            <div class="mt-1 flex flex-wrap gap-1">
+              ${GEN_ORDER.filter(k => st.g[k] > 0).map(k => `<span class="text-[9px] font-semibold px-1 py-0.5 rounded border ${GEN_META[k].cls}">${GEN_META[k].short} ${st.g[k]}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+          ${teams.map((list, t) => colourColumnHtml(list, t)).join('')}
+        </div>`;
+      modal.classList.remove('hidden');
+    }
+
+    function closeSplitResult() {
+      const modal = document.getElementById('splitResultModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function reopenSplitResult() {
+      if (!lastSplitResult) return;
+      showSplitResult(lastSplitResult.title, lastSplitResult.sub, lastSplitResult.teams);
+    }
+
+    // สร้างทีม 4 สีจากผลที่บันทึกไว้ (ใช้ได้แม้โหลดหน้าใหม่)
+    function rebuildTeams(div, sub) {
+      const rec = subdivSplitOf(div, sub);
+      if (!rec || !rec.teams) return null;
+      const idx = new Map();
+      (stagePools[4] || []).forEach(u => idx.set(getPersonKey(u), u));
+      const teams = rec.teams.map(keys => (keys || []).map(k => idx.get(k)).filter(Boolean));
+      return teams.some(t => t.length) ? teams : null;
+    }
+
+    // ทีม 4 สีจากสถานะปัจจุบัน (กรณีไม่มี record ที่บันทึกไว้)
+    function liveTeamsOf(list) {
+      const teams = [[], [], [], []];
+      list.forEach(u => {
+        const t = assignedTeamOf(u);
+        if (t >= 0) teams[t].push(u);
+      });
+      return teams.some(t => t.length) ? teams : null;
+    }
+
+    function openSplitResultFor(div, sub) {
+      const teams = rebuildTeams(div, sub) || liveTeamsOf(subdivPeopleOf(div, sub));
+      if (!teams) { showAvatarToast('ยังไม่ได้สุ่มส่วนนี้'); return; }
+      showSplitResult(div, sub, teams);
+    }
+
+    // สร้างทีม 4 สีของทั้งสำนักจากผลที่บันทึกไว้ในทุกส่วนงานย่อย
+    function rebuildDivisionTeams(div) {
+      const idx = new Map();
+      (stagePools[4] || []).forEach(u => idx.set(getPersonKey(u), u));
+      const rec = divisionSplits[div];
+      if (!rec) return null;
+      const subs = rec.subdivs || (rec.subdiv ? { [rec.subdiv]: rec } : {});
+      const teams = [[], [], [], []];
+      let any = false;
+      Object.values(subs).forEach(r => {
+        (r.teams || []).forEach((keys, t) => {
+          (keys || []).forEach(k => { const u = idx.get(k); if (u) { teams[t].push(u); any = true; } });
+        });
+      });
+      return any ? teams : null;
+    }
+
+    function openDivisionResult(div) {
+      const teams = rebuildDivisionTeams(div) || liveTeamsOf(divisionPeopleOf(div));
+      if (!teams) { showAvatarToast('ยังไม่ได้สุ่มสำนักนี้'); return; }
+      const parts = divisionSplits[div] && divisionSplits[div].subdivs ? Object.keys(divisionSplits[div].subdivs).length : 1;
+      showSplitResult(div, `ผลรวม ${parts} ส่วนงาน`, teams);
+    }
+
+    function splitSubdivNow(div, sub) {
+      const list = subdivPeopleOf(div, sub);
+      if (!list.length) { showAvatarToast('ไม่มีคนในส่วนงานนี้'); return; }
+      const teams = splitBalanced(list);
+      applyTeamsFlat(teams);
+      recordSplit(div, sub, teams);
+      saveSyncState();
+      renderAllViews();
+      playBeep(659.25, 'triangle', 0.12);
+      showAvatarToast(`สุ่ม ${sub} แล้ว ${list.length} คน · เกลี่ยช่วงวัยและเพศสมดุลทุกสี`);
+      showSplitResult(div, sub, teams);
+    }
+
+    function splitDivisionNow(div) {
+      const merged = [[], [], [], []];
+      const sizes = baseTeamSizes();
+      const { parts, total } = splitDivisionPool(div, merged, sizes);
+      if (!total) { showAvatarToast('ไม่มีคนในสำนักนี้'); return; }
+      evenOutTeams(merged);
+      recordFromTeams(div, merged);
+      applyTeamsFlat(merged);
+      saveSyncState();
+      renderAllViews();
+      playBeep(659.25, 'triangle', 0.12);
+      showAvatarToast(`สุ่มครบ ${parts} ส่วนงานของ ${div} แล้ว · ${total} คน`);
+      showSplitResult(div, `ทุกส่วนงาน (${parts} ส่วน)`, merged);
+    }
+
+    function splitEveryDivisionNow() {
+      const pool = stagePools[4] || [];
+      if (!pool.length) { showAvatarToast('ยังไม่มีบุคลากรในรอบที่ 5'); return; }
+      const merged = [[], [], [], []];
+      const sizes = baseTeamSizes();
+      let parts = 0, total = 0;
+      divisionGroups(pool).forEach(([div]) => {
+        const res = splitDivisionPool(div, merged, sizes);
+        parts += res.parts;
+        total += res.total;
+      });
+      evenOutTeams(merged);
+      divisionGroups(pool).forEach(([div]) => recordFromTeams(div, merged));
+      applyTeamsFlat(merged);
+      saveSyncState();
+      renderAllViews();
+      playBeep(880, 'triangle', 0.14);
+      showAvatarToast(`สุ่มทุกส่วนงานทั้งหมด ${parts} ส่วน · ${total} คน เรียบร้อย`);
+      showSplitResult('ทุกสำนัก/ศูนย์/กลุ่ม', `ทุกส่วนงาน (${parts} ส่วน)`, merged);
+    }
+
+    function resetDivisionSplits() {
+      const pool = stagePools[4] || [];
+      const keys = new Set(pool.map(getPersonKey));
+      for (let t = 0; t < 4; t++) currentTeams[t] = currentTeams[t].filter(p => !keys.has(getPersonKey(p)));
+      pool.forEach(u => { u.assignedTeam = -1; u.assignedStage = 0; });
+      divisionSplits = {};
+      persistDivisionSplits();
+      saveSyncState();
+      renderAllViews();
+      showAvatarToast('เริ่มสุ่มรอบที่ 5 ใหม่ทั้งหมด');
+    }
+
+    function openDivisionModalAt(div, sub) {
+      divisionUi.division = div;
+      divisionUi.subdiv = sub || null;
+      divisionUi.gens = new Set(GEN_ORDER);
+      divisionUi.gender = 'all';
+      divisionUi.split = null;
+      const modal = document.getElementById('divisionModal');
+      if (modal) modal.classList.remove('hidden');
+      renderDivisionModal();
+    }
+
+    function applyDivisionSplit() {
+      const teams = divisionUi.split;
+      if (!teams || !teams.length) return;
+      applyTeamsFlat(teams);
+      recordSplit(divisionUi.division, divisionUi.subdiv, teams);
+      saveSyncState();
+      renderAllViews();
+      showAvatarToast(`ใช้ผลแบ่งสีของ ${divisionUi.subdiv || divisionUi.division} เรียบร้อย (${teams.reduce((s, t) => s + t.length, 0)} คน)`);
+      closeDivisionModal();
+    }
+
     function renderAllViews() {
       updateCounters();
       renderColumnsView();
       renderTableView();
       renderBreakdownView();
+      renderDivisionCards();
     }
 
     function updateCounters() {
@@ -2026,16 +3304,55 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await window.DATA_LOADED;
       initAvatarSystem();
+      loadDivisionSplits();
       if (window.INITIAL_USER_DATA && window.INITIAL_USER_DATA.length > 0) {
         allUsers = applySavedActiveFlags(window.INITIAL_USER_DATA.map(u => ({ ...u, active: true })));
+        officeCache[3] = allUsers.slice();
         updateManageCounts();
         classifyUsersIntoStages(allUsers.filter(u => u.active !== false));
         const restored = restoreSavedState();
         updateStepperUI();
         renderAllViews();
-      }
+        renderOfficePicker();
+                // รวมทุกกลุ่มหน่วยงานที่เลือกไว้ให้อัตโนมัติ (ไม่ต้องกด "แสดงรายชื่อ")
+                applyOfficeSelection({ silent: true });
+              }
+              // กรณีไม่มีข้อมูลเริ่มต้น ให้รวมจากกลุ่มหน่วยงานที่เลือกไว้แทน
+              if (!allUsers.length) applyOfficeSelection({ silent: true });
     });
   </script>
+
+  <!-- หน้าต่าง Modal: กลุ่มหน่วยงาน (eoffice) -->
+  <div id="officeModal" class="fixed inset-0 z-50 bg-[#0b1f48]/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3 bg-slate-50/70">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-royal-100 text-royal-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-building-columns"></i>
+          </span>
+          <div>
+            <h3 class="font-bold text-base text-slate-900 font-heading">กลุ่มหน่วยงาน (eoffice)</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">รายชื่อและรูปภาพจาก eoffice ถูกโหลดและรวมเข้าโครงการให้อัตโนมัติเมื่อเปิดหน้านี้</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeOfficeModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 overflow-y-auto custom-scroll">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span id="officeRosterChip" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">0 คน</span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-[11px] font-semibold">
+            <i class="fa-solid fa-circle-check"></i> รวมอัตโนมัติ
+          </span>
+        </div>
+        <div id="officeOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2"><!-- Render ผ่าน JavaScript --></div>
+      </div>
+      <div class="p-4 border-t border-slate-200 bg-slate-50/60 flex justify-end">
+        <button type="button" onclick="closeOfficeModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition active:scale-95">ปิด</button>
+      </div>
+    </div>
+  </div>
 
   <!-- หน้าต่างเปิดขึ้นมา (Modal): จัดการรายชื่อผู้เข้าร่วม -->
   <div id="manageModal" class="fixed inset-0 z-50 bg-[#0b1f48]/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
